@@ -1,0 +1,20 @@
+# Render Blueprint 配置
+# 免费版配置：Starter 实例
+databases:
+  - name: icp-plan-system-db
+    plan: free
+    databaseName: icp_plan_db
+    ipAllowList: []
+
+services:
+  - type: web
+    name: icp-plan-system
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

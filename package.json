@@ -1,0 +1,24 @@
+{
+  "name": "icp-plan-system",
+  "version": "1.0.0",
+  "description": "内控计划共享编辑系统后端",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/icp-plan-system.git"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "sql.js": "^1.14.1"
+  }
+}

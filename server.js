@@ -1,0 +1,138 @@
+/**
+ * 内控计划共享编辑系统 - 后端服务入口
+ * Node.js + Express + SQLite (sql.js)
+ */
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+
+// 导入数据库初始化模块
+const { initDatabase, getDbReady } = require('./db/init');
+
+// 导入路由
+const authRoutes = require('./routes/auth');
+const plansRoutes = require('./routes/plans');
+const usersRoutes = require('./routes/users');
+const groupsRoutes = require('./routes/groups');
+const notificationsRoutes = require('./routes/notifications');
+const logsRoutes = require('./routes/logs');
+
+// 创建Express应用
+const app = express();
+const PORT = process.env.PORT || 3000;
+console.log('PORT setting:', PORT);
+
+// 中间件配置
+app.use(cors()); // 允许跨域
+app.use(express.json()); // 解析JSON请求体
+app.use(express.urlencoded({ extended: true })); // 解析URL编码
+
+// 内容安全策略（CSP）- 允许内联脚本和事件处理
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'"
+  );
+  next();
+});
+
+// 静态文件托管（前端页面）
+app.use(express.static('public'));
+
+// 请求日志中间件
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${new Date().toISOString()} ${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
+  });
+  next();
+});
+
+// 健康检查接口
+app.get('/api/health', (req, res) => {
+  res.json({
+    code: 200,
+    message: 'success',
+    data: {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    }
+  });
+});
+
+// API路由挂载
+app.use('/api/auth', authRoutes);           // 认证路由
+app.use('/api/user', authRoutes);           // 用户信息路由（兼容 /api/user/info）
+app.use('/api/plans', plansRoutes);         // 内控计划路由
+app.use('/api/users', usersRoutes);         // 用户管理路由
+app.use('/api/groups', groupsRoutes);       // 小组路由
+app.use('/api/notifications', notificationsRoutes); // 消息通知路由
+app.use('/api/logs', logsRoutes);           // 操作日志路由
+
+// 404处理
+app.use((req, res) => {
+  res.status(404).json({
+    code: 404,
+    message: '接口不存在',
+    data: null
+  });
+});
+
+// 错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('服务器错误:', err);
+  res.status(500).json({
+    code: 500,
+    message: '服务器内部错误',
+    data: null
+  });
+});
+
+// 初始化数据库并启动服务器
+async function startServer() {
+  try {
+    console.log('开始启动服务器...');
+    
+    // 等待数据库初始化完成
+    await initDatabase();
+    
+    // 启动服务器
+    app.listen(PORT, () => {
+      console.log('========================================');
+      console.log('  内控计划共享编辑系统 - 后端服务');
+      console.log('========================================');
+      console.log(`  服务地址: http://localhost:${PORT}`);
+      console.log(`  健康检查: http://localhost:${PORT}/api/health`);
+      console.log('========================================');
+      console.log('  测试账号:');
+      console.log('  - 管理员: 工号 000000 / 密码 admin123');
+      console.log('  - 组长:   工号 100001 / 密码 leader123');
+      console.log('  - 组员:   工号 100002 / 密码 member123');
+      console.log('  - 主任:   工号 200001 / 密码 director123');
+      console.log('========================================');
+      console.log(`  启动时间: ${new Date().toISOString()}`);
+      console.log('========================================');
+    });
+  } catch (error) {
+    console.error('服务器启动失败:', error);
+    process.exit(1);
+  }
+}
+
+// 处理未捕获的异常
+process.on('uncaughtException', (err) => {
+  console.error('未捕获的异常:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('未处理的Promise拒绝:', reason);
+});
+
+// 启动服务
+startServer();
+
+// 导出app用于测试
+module.exports = app;
