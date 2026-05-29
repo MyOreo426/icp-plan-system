@@ -240,6 +240,7 @@
         .col-source { width: 100px; }
         .col-deliverable { width: 150px; }
         .col-responsible { width: 80px; }
+        .col-group { width: 80px; }
         .col-issue-date { width: 100px; }
         .col-deadline { width: 100px; }
         .col-progress { width: 120px; }
@@ -593,6 +594,7 @@
                                 <th class="col-source">计划来源</th>
                                 <th class="col-deliverable">交付物</th>
                                 <th class="col-responsible">责任人</th>
+                                <th class="col-group">所属组</th>
                                 <th class="col-issue-date">下发日期</th>
                                 <th class="col-deadline">截止日期</th>
                                 <th class="col-progress">当前进展</th>
@@ -602,7 +604,7 @@
                             </tr>
                         </thead>
                         <tbody id="tableBody">
-                            <tr><td colspan="13" class="loading">加载中...</td></tr>
+                            <tr><td colspan="14" class="loading">加载中...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -886,7 +888,7 @@
                 renderTable(list);
                 renderPagination(data.data?.pagination);
             } catch (e) {
-                document.getElementById('tableBody').innerHTML = `<tr><td colspan="13" class="empty-state">加载失败: ${e.message}</td></tr>`;
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="14" class="empty-state">加载失败: ${e.message}</td></tr>`;
             }
         }
 
@@ -928,6 +930,9 @@
                 </td>
                 <td class="col-responsible">
                     ${getResponsibleSelectHtml(currentUser?.id)}
+                </td>
+                <td class="col-group">
+                    <span style="color:#999;font-size:12px;">自动</span>
                 </td>
                 <td class="col-issue-date">
                     <input type="date" class="inline-input" name="plan_issue_date" value="">
@@ -1064,7 +1069,7 @@
             const newRowHtml = isAddingNew ? document.getElementById('newPlanRow')?.outerHTML : null;
             
             if (!plans || plans.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" class="empty-state">
+                tbody.innerHTML = `<tr><td colspan="14" class="empty-state">
                     <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                     <div>暂无数据</div>
                 </td></tr>`;
@@ -1082,6 +1087,7 @@
                     <td class="col-source">${plan.plan_source || '-'}</td>
                     <td class="col-deliverable" title="${plan.deliverable || ''}">${plan.deliverable || '-'}</td>
                     <td class="col-responsible">${plan.responsible_name || '<span style="color:#f59e0b;">待分配</span>'}</td>
+                    <td class="col-group">${plan.group_name || '-'}</td>
                     <td class="col-issue-date">${plan.plan_issue_date || '-'}</td>
                     <td class="col-deadline">
                         ${plan.plan_deadline || '-'}
