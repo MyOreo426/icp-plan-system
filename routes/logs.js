@@ -114,44 +114,8 @@ router.get('/', (req, res) => {
 });
 
 /**
- * GET /api/logs/:id
- * 获取日志详情
- */
-router.get('/:id', (req, res) => {
-  const db = getDb();
-  const { id } = req.params;
-
-  const log = db.prepare(`
-    SELECT l.*, u.real_name as user_real_name, u.username as user_username, u.group_id
-    FROM sys_operation_log l
-    LEFT JOIN sys_user u ON l.user_id = u.id
-    WHERE l.id = ?
-  `).get(id);
-
-  if (!log) {
-    return error(res, 404, '日志不存在');
-  }
-
-  // 能看到日志列表的角色都有权查看详情，不再做额外权限控制
-
-  // 解析JSON字段
-  if (log.before_data) {
-    try {
-      log.before_data = JSON.parse(log.before_data);
-    } catch (e) {}
-  }
-  if (log.after_data) {
-    try {
-      log.after_data = JSON.parse(log.after_data);
-    } catch (e) {}
-  }
-
-  return success(res, log);
-});
-
-/**
- * GET /api/logs/stats
- * 获取操作统计
+ * GET /api/logs/stats/summary
+ * 获取操作统计（必须在/:id之前注册，否则会被:id参数拦截）
  */
 router.get('/stats/summary', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
   const db = getDb();
@@ -207,6 +171,40 @@ router.get('/stats/summary', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, r
     by_user: byUser,
     today_count: todayCount.count
   });
+});
+
+/**
+ * GET /api/logs/:id
+ * 获取日志详情
+ */
+router.get('/:id', (req, res) => {
+  const db = getDb();
+  const { id } = req.params;
+
+  const log = db.prepare(`
+    SELECT l.*, u.real_name as user_real_name, u.username as user_username, u.group_id
+    FROM sys_operation_log l
+    LEFT JOIN sys_user u ON l.user_id = u.id
+    WHERE l.id = ?
+  `).get(id);
+
+  if (!log) {
+    return error(res, 404, '日志不存在');
+  }
+
+  // 解析JSON字段
+  if (log.before_data) {
+    try {
+      log.before_data = JSON.parse(log.before_data);
+    } catch (e) {}
+  }
+  if (log.after_data) {
+    try {
+      log.after_data = JSON.parse(log.after_data);
+    } catch (e) {}
+  }
+
+  return success(res, log);
 });
 
 module.exports = router;

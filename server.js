@@ -24,7 +24,25 @@ const PORT = process.env.PORT || 3000;
 console.log('PORT setting:', PORT);
 
 // 中间件配置
-app.use(cors()); // 允许跨域
+// 跨域配置（生产环境限制来源域名）
+const allowedOrigins = [
+  'https://web-production-ecf21.up.railway.app',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+app.use(cors({
+  origin: function(origin, callback) {
+    // 允许无origin的请求（如服务端请求、Postman）
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // 暂时允许所有来源，记录日志
+      console.warn('CORS: 未在白名单的来源:', origin);
+    }
+  },
+  credentials: true
+}));
 app.use(express.json()); // 解析JSON请求体
 app.use(express.urlencoded({ extended: true })); // 解析URL编码
 
@@ -109,14 +127,15 @@ async function startServer() {
       console.log('========================================');
       console.log('  内控计划共享编辑系统 - 后端服务');
       console.log('========================================');
-      console.log(`  服务地址: http://localhost:${PORT}`);
-      console.log(`  健康检查: http://localhost:${PORT}/api/health`);
-      console.log('========================================');
-      console.log('  测试账号:');
-      console.log('  - 管理员: 工号 000000 / 密码 admin123');
-      console.log('  - 组长:   工号 100001 / 密码 leader123');
-      console.log('  - 组员:   工号 100002 / 密码 member123');
-      console.log('  - 主任:   工号 200001 / 密码 director123');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('  测试账号:');
+        console.log('  - 管理员: 工号 000000 / 密码 admin123');
+        console.log('  - 组长:   工号 100001 / 密码 leader123');
+        console.log('  - 组员:   工号 100002 / 密码 member123');
+        console.log('  - 主任:   工号 200001 / 密码 director123');
+      } else {
+        console.log('  运行环境: production (测试账号已隐藏)');
+      }
       console.log('========================================');
       console.log(`  启动时间: ${new Date().toISOString()}`);
       console.log('========================================');
