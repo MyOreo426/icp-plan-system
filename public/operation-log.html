@@ -531,7 +531,8 @@
             const role = user.role;
             
             if (role === 'ADMIN') {
-                // 管理员：隐藏计划列表和导入导出，显示用户管理、小组管理
+                // 管理员：只显示用户管理、小组管理、操作日志
+                document.getElementById('dashboardNavBtn').style.display = 'none';
                 document.getElementById('planListNavBtn').style.display = 'none';
                 document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('adminNavBtn').style.display = 'flex';
