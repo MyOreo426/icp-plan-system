@@ -37,6 +37,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// 根路径重定向到登录页
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
+
 // 静态文件托管（前端页面）
 app.use(express.static('public'));
 
