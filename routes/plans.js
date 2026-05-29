@@ -495,6 +495,120 @@ router.put('/:id', (req, res) => {
 });
 
 /**
+ * POST /api/plans/import
+ * 批量导入计划（必须在/:id路由之前注册）
+ */
+router.post('/import', requireRole('MEMBER', 'LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
+  const db = getDb();
+  const { plans } = req.body;
+
+  if (!Array.isArray(plans) || plans.length === 0) {
+    return error(res, 400, '请提供计划数据数组');
+  }
+
+  if (plans.length > 500) {
+    return error(res, 400, '单次导入不超过500条');
+  }
+
+  // 状态映射：中文→英文
+  const statusMap = {
+    '待执行': 'PENDING', '执行中': 'IN_PROGRESS', '已归零': 'CLOSED', '持续开展': 'CONTINUOUS',
+    'PENDING': 'PENDING', 'IN_PROGRESS': 'IN_PROGRESS', 'CLOSED': 'CLOSED', 'CONTINUOUS': 'CONTINUOUS'
+  };
+
+  const results = { success: 0, failed: 0, errors: [] };
+
+  // 获取当前最大序号
+  const maxResult = db.prepare('SELECT MAX(seq_no) as max_no FROM icp_plan').get();
+  let nextSeqNo = (maxResult?.max_no || 0) + 1;
+
+  plans.forEach((item, index) => {
+    try {
+      // 校验必填字段
+      if (!item.category && !item['类别']) {
+        results.errors.push(`第${index + 1}行：类别不能为空`);
+        results.failed++;
+        return;
+      }
+      if (!item.action_item && !item['行动项']) {
+        results.errors.push(`第${index + 1}行：行动项不能为空`);
+        results.failed++;
+        return;
+      }
+      if (!item.plan_deadline && !item['截止日期']) {
+        results.errors.push(`第${index + 1}行：截止日期不能为空`);
+        results.failed++;
+        return;
+      }
+
+      // 字段映射（兼容中英文表头）
+      const category = item.category || item['类别'];
+      const project = item.project || item['项目'] || null;
+      const actionItem = item.action_item || item['行动项'];
+      const planSource = item.plan_source || item['计划来源'] || null;
+      const deliverable = item.deliverable || item['交付物'] || null;
+      const planIssueDate = item.plan_issue_date || item['下发日期'] || item['计划下发日期'] || null;
+      const planDeadline = item.plan_deadline || item['截止日期'];
+      const currentProgress = item.current_progress || item['当前进展'] || item['进展'] || null;
+      const remark = item.remark || item['备注'] || null;
+
+      // 处理状态
+      let status = item.status || item['状态'] || 'PENDING';
+      status = statusMap[status] || 'PENDING';
+
+      // 处理责任人（通过工号匹配）
+      let responsibleId = null;
+      const responsibleUsername = item.responsible_username || item['责任人(工号)'] || item['责任人工号'] || item['责任人'];
+      if (responsibleUsername) {
+        const responsible = db.prepare('SELECT id, group_id FROM sys_user WHERE username = ? AND status = 1').get(String(responsibleUsername));
+        if (responsible) {
+          responsibleId = responsible.id;
+        }
+      }
+
+      // 确定小组ID
+      let groupId = req.user.group_id;
+      if (responsibleId) {
+        const responsible = db.prepare('SELECT group_id FROM sys_user WHERE id = ?').get(responsibleId);
+        if (responsible && responsible.group_id) {
+          groupId = responsible.group_id;
+        }
+      }
+
+      // 处理序号
+      const seqNo = item.seq_no || item['序号'] || nextSeqNo;
+      nextSeqNo = Math.max(nextSeqNo, seqNo + 1);
+
+      // 计算超期
+      const isOverdue = calculateIsOverdue(planDeadline) ? 1 : 0;
+
+      // 插入计划
+      db.prepare(`
+        INSERT INTO icp_plan (
+          seq_no, category, project, action_item, plan_source, deliverable,
+          responsible_id, plan_issue_date, plan_deadline, current_progress,
+          is_overdue, status, remark, creator_id, group_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        seqNo, category, project, actionItem, planSource, deliverable,
+        responsibleId, planIssueDate, planDeadline, currentProgress,
+        isOverdue, status, remark, req.user.id, groupId
+      );
+
+      results.success++;
+    } catch (err) {
+      results.errors.push(`第${index + 1}行：${err.message}`);
+      results.failed++;
+    }
+  });
+
+  // 记录导入日志
+  logOperation(db, req.user.id, req.user.real_name, 'IMPORT', 'PLAN', null, null, { total: plans.length, success: results.success, failed: results.failed }, req);
+
+  return success(res, results, `导入完成：成功${results.success}条，失败${results.failed}条`);
+});
+
+/**
  * DELETE /api/plans/:id
  * 软删除计划
  */

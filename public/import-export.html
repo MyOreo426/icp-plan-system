@@ -407,7 +407,6 @@
                 'Authorization': `Bearer ${token}`
             };
 
-            // 处理文件上传
             if (options.body instanceof FormData) {
                 delete defaultHeaders['Content-Type'];
             } else {
@@ -440,7 +439,6 @@
 
         // 下载模板
         function downloadTemplate() {
-            // 创建CSV模板（中文表头）
             const headers = ['序号', '类别', '项目', '行动项', '计划来源', '交付物', '责任人(工号)', '下发日期', '截止日期', '当前进展', '状态'];
             const sampleData = [
                 [1, '合规检查', '年度内控优化', '完善采购流程', '年度计划', '采购管理制度v2.0', '', '2024-01-01', '2024-12-31', '', '待执行'],
@@ -492,7 +490,6 @@
                     return;
                 }
 
-                // 转换为CSV
                 const headers = ['序号', '类别', '项目', '行动项', '计划来源', '交付物', '责任人', '截止日期', '状态', '当前进展'];
                 let csv = headers.join(',') + '\n';
 
@@ -541,7 +538,7 @@
             return names[status] || status;
         }
 
-        // 处理文件选择
+        // 处理文件选择 - 批量导入
         async function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -549,21 +546,128 @@
             const resultBox = document.getElementById('uploadResult');
             resultBox.className = 'result-box';
             resultBox.style.display = 'block';
-            resultBox.innerHTML = '正在处理文件...';
+            resultBox.innerHTML = '正在读取文件...';
 
-            // 由于浏览器端无法直接解析Excel，这里简化处理
-            // 提示用户下载模板，手动填写后再导入
-            resultBox.className = 'result-box error show';
-            resultBox.innerHTML = `
-                <strong>浏览器限制说明：</strong><br>
-                由于浏览器安全限制，无法直接在网页上读取Excel文件。<br><br>
-                <strong>建议操作：</strong>
-                <ol style="margin:10px 0 0 20px;line-height:1.8;">
-                    <li>点击上方"下载模板"按钮获取模板</li>
-                    <li>在Excel中填写数据</li>
-                    <li>联系管理员使用后端工具进行批量导入</li>
-                </ol>
-            `;
+            try {
+                // 动态加载SheetJS
+                if (typeof XLSX === 'undefined') {
+                    await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+                }
+
+                // 读取文件
+                const data = await readFileAsync(file);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+                // 读取第一个工作表
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                // 转为JSON（使用表头作为key）
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                if (jsonData.length === 0) {
+                    resultBox.className = 'result-box error show';
+                    resultBox.innerHTML = '<strong>导入失败：</strong>文件中没有数据行';
+                    return;
+                }
+
+                // 预览数据
+                resultBox.className = 'result-box';
+                resultBox.style.display = 'block';
+                resultBox.innerHTML = `
+                    <div style="margin-bottom:15px;">
+                        <strong>文件读取成功！</strong><br>
+                        工作表：${sheetName}，共 ${jsonData.length} 行数据
+                    </div>
+                    <div style="margin-bottom:15px;max-height:200px;overflow:auto;border:1px solid #e0e6ed;border-radius:6px;padding:10px;font-size:12px;background:#f8fafc;">
+                        <strong>前3行预览：</strong>
+                        <pre style="margin:5px 0 0;white-space:pre-wrap;">${jsonData.slice(0, 3).map((r, i) => `第${i+1}行: ${JSON.stringify(r, null, 0)}`).join('\n')}</pre>
+                    </div>
+                    <button class="btn btn-primary" onclick="doImport()" id="importConfirmBtn">
+                        确认导入 ${jsonData.length} 条数据
+                    </button>
+                    <button class="btn btn-outline" onclick="cancelImport()" style="margin-left:10px;">
+                        取消
+                    </button>
+                `;
+
+                // 暂存数据
+                window._importData = jsonData;
+            } catch (err) {
+                resultBox.className = 'result-box error show';
+                resultBox.innerHTML = `<strong>文件读取失败：</strong>${err.message}<br><br>请确保文件格式为 .xlsx 或 .xls`;
+            }
+
+            // 重置文件输入，允许重复选择同一文件
+            event.target.value = '';
+        }
+
+        // 动态加载脚本
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('无法加载Excel解析库，请检查网络'));
+                document.head.appendChild(script);
+            });
+        }
+
+        // 异步读取文件
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(new Uint8Array(e.target.result));
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 执行导入
+        async function doImport() {
+            const plans = window._importData;
+            if (!plans || plans.length === 0) return;
+
+            const btn = document.getElementById('importConfirmBtn');
+            const resultBox = document.getElementById('uploadResult');
+            btn.disabled = true;
+            btn.textContent = '导入中...';
+
+            try {
+                const res = await apiRequest(`${API_BASE}/plans/import`, {
+                    method: 'POST',
+                    body: JSON.stringify({ plans })
+                });
+
+                if (res.code === 200) {
+                    const result = res.data;
+                    let html = `<strong>导入完成！</strong><br>✅ 成功：${result.success} 条<br>`;
+                    if (result.failed > 0) {
+                        html += `❌ 失败：${result.failed} 条<br>`;
+                        html += '<div style="margin-top:10px;max-height:150px;overflow:auto;font-size:12px;color:#991b1b;">';
+                        html += result.errors.map(e => `<div>${e}</div>`).join('');
+                        html += '</div>';
+                    }
+                    resultBox.className = 'result-box success show';
+                    resultBox.innerHTML = html;
+                } else {
+                    resultBox.className = 'result-box error show';
+                    resultBox.innerHTML = `<strong>导入失败：</strong>${res.message}`;
+                }
+            } catch (err) {
+                resultBox.className = 'result-box error show';
+                resultBox.innerHTML = `<strong>导入失败：</strong>网络错误，请重试`;
+            }
+
+            window._importData = null;
+        }
+
+        // 取消导入
+        function cancelImport() {
+            window._importData = null;
+            const resultBox = document.getElementById('uploadResult');
+            resultBox.className = 'result-box';
+            resultBox.style.display = 'none';
         }
 
         function logout() {
@@ -645,19 +749,15 @@
             document.getElementById('userRole').textContent = getRoleName(user.role);
             document.getElementById('userAvatar').textContent = getRoleEmoji(user.role);
             
-            // 根据角色显示/隐藏导航按钮
             if (user.role === 'ADMIN') {
-                // 管理员：隐藏计划列表和导入导出，显示用户管理、小组管理、操作日志
                 document.getElementById('planListNavBtn').style.display = 'none';
                 document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';
                 document.getElementById('groupNavBtn').style.display = 'flex';
             } else if (['LEADER', 'DIRECTOR'].includes(user.role)) {
-                // 主任/组长：显示操作日志
                 document.getElementById('logNavBtn').style.display = 'flex';
             }
-            // MEMBER：默认显示计划列表和导入导出，无需额外操作
         }
 
         // 点击通知面板外部关闭
