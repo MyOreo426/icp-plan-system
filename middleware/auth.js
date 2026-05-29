@@ -8,7 +8,7 @@ const { getDb } = require('../db/init');
 const { error } = require('../utils/response');
 
 // JWT密钥（生产环境应从环境变量读取）
-const JWT_SECRET = 'icp-system-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'icp-system-secret-key-2024';
 const JWT_EXPIRES_IN = '7d'; // Token有效期7天
 
 // 登录失败锁定配置
