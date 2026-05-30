@@ -37,7 +37,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // 暂时允许所有来源，记录日志
+      callback(new Error('CORS: 来源不在白名单')); // 拒绝未授权来源
       console.warn('CORS: 未在白名单的来源:', origin);
     }
   },

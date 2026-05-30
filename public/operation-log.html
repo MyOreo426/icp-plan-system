@@ -595,7 +595,7 @@
 
         async function markAllRead() {
             try {
-                await apiRequest(`${API_BASE}/notifications/mark-all-read`, { method: 'POST' });
+                await apiRequest(`${API_BASE}/notifications/read-all`, { method: 'PUT' });
                 document.getElementById('notifBadge').classList.add('hidden');
                 loadNotifications();
             } catch (e) {
