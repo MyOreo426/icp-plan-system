@@ -428,6 +428,7 @@
         let planId = null;
         let isEditMode = false;
         let groupMembers = [];
+        let allMembers = [];
         let originalStatus = 'PENDING';
 
         // 检查登录
@@ -506,9 +507,17 @@
             } else {
                 document.getElementById('pageTitle').textContent = '新建计划';
                 await loadUserInfo();
+                await loadGroups();
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('formContainer').style.display = 'block';
             }
+
+            // 所属组变更时过滤责任人下拉
+            document.getElementById('group_id').addEventListener('change', function() {
+                renderResponsibles();
+            });
+            // 责任人变更时自动同步所属组
+            document.getElementById('responsible_id').addEventListener('change', updateGroupByResponsible);
         }
 
         function getRoleName(r) { return { ADMIN:'管理员', LEADER:'组长', MEMBER:'组员', DIRECTOR:'主任' }[r] || r; }
@@ -597,33 +606,41 @@
                 if (['ADMIN', 'DIRECTOR'].includes(currentUser.role)) {
                     const allUsersData = await apiRequest(`${API_BASE}/users`);
                     if (allUsersData.code === 200) {
-                        groupMembers = allUsersData.data.list || allUsersData.data || [];
+                        allMembers = allUsersData.data.list || allUsersData.data || [];
                     }
                 } else {
                     const data = await apiRequest(`${API_BASE}/user/info`);
                     if (data.code === 200) {
-                        groupMembers = data.data.groupMembers || [];
+                        allMembers = data.data.groupMembers || [];
                     }
                 }
-                renderResponsibles();
+                groupMembers = allMembers;
             } catch (e) {
                 console.error(e);
             }
         }
 
-        // 渲染责任人下拉
+        // 根据所选组过滤并渲染责任人下拉
         function renderResponsibles() {
+            const groupId = document.getElementById('group_id').value;
             const select = document.getElementById('responsible_id');
+            const currentValue = select.value;
             select.innerHTML = '<option value="">-- 请选择责任人 --</option>';
-            groupMembers.forEach(m => {
+
+            // 如果选了组，只显示该组成员；否则显示全部
+            const members = groupId ? allMembers.filter(m => m.group_id == groupId) : allMembers;
+            members.forEach(m => {
                 select.innerHTML += `<option value="${m.id}">${m.real_name} (${m.username})</option>`;
             });
+
+            // 尝试恢复之前选中的值
+            if (currentValue && members.find(m => m.id == currentValue)) {
+                select.value = currentValue;
+            }
             // 新建模式下默认选中当前用户
-            if (!isEditMode && currentUser) {
+            if (!isEditMode && currentUser && members.find(m => m.id == currentUser.id)) {
                 select.value = currentUser.id;
             }
-            // 责任人变更时自动更新所属组
-            updateGroupByResponsible();
         }
 
         // 加载小组列表
@@ -633,7 +650,7 @@
                 if (data.code === 200) {
                     const groups = data.data.list || data.data || [];
                     const select = document.getElementById('group_id');
-                    select.innerHTML = '<option value="">-- 自动跟随责任人 --</option>';
+                    select.innerHTML = '<option value="">-- 请选择所属组 --</option>';
                     groups.forEach(g => {
                         select.innerHTML += `<option value="${g.id}">${g.group_name}</option>`;
                     });
@@ -643,11 +660,11 @@
             }
         }
 
-        // 根据责任人自动选择所属组
+        // 根据责任人自动选择所属组（选择责任人后反向同步组）
         function updateGroupByResponsible() {
             const responsibleId = document.getElementById('responsible_id').value;
             if (responsibleId) {
-                const member = groupMembers.find(m => m.id == responsibleId);
+                const member = allMembers.find(m => m.id == responsibleId);
                 if (member && member.group_id) {
                     document.getElementById('group_id').value = member.group_id;
                 }
@@ -688,8 +705,10 @@
                 document.getElementById('plan_source').value = plan.plan_source || '';
                 document.getElementById('action_item').value = plan.action_item || '';
                 document.getElementById('deliverable').value = plan.deliverable || '';
-                document.getElementById('responsible_id').value = plan.responsible_id || '';
                 document.getElementById('group_id').value = plan.group_id || '';
+                // 先按组过滤责任人列表，再设置责任人值
+                renderResponsibles();
+                document.getElementById('responsible_id').value = plan.responsible_id || '';
                 document.getElementById('plan_issue_date').value = plan.plan_issue_date || '';
                 document.getElementById('plan_deadline').value = plan.plan_deadline || '';
                 document.getElementById('current_progress').value = plan.current_progress || '';
