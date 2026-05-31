@@ -1,5 +1,5 @@
 /**
- * 内控计划共享编辑系统 - 后端服务入口
+ * 计划管理系统 - 后端服务入口
  * Node.js + Express + SQLite (sql.js)
  */
 
@@ -106,7 +106,7 @@ app.get('/api/health', (req, res) => {
 // API路由挂载
 app.use('/api/auth', authRoutes);           // 认证路由
 app.use('/api/user', authRoutes);           // 用户信息路由（兼容 /api/user/info）
-app.use('/api/plans', plansRoutes);         // 内控计划路由
+app.use('/api/plans', plansRoutes);         // 计划路由
 app.use('/api/users', usersRoutes);         // 用户管理路由
 app.use('/api/groups', groupsRoutes);       // 小组路由
 app.use('/api/notifications', notificationsRoutes); // 消息通知路由
@@ -142,7 +142,7 @@ async function startServer() {
     // 启动服务器
     app.listen(PORT, () => {
       console.log('========================================');
-      console.log('  内控计划共享编辑系统 - 后端服务');
+      console.log('  计划管理系统 - 后端服务');
       console.log('========================================');
       if (process.env.NODE_ENV !== 'production') {
         console.log('  测试账号:');

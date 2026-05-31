@@ -1,8 +1,8 @@
-# 内控计划共享编辑系统 - 后端服务
+# 计划管理系统 - 后端服务
 
 ## 项目简介
 
-这是一个基于 Node.js + Express + SQLite 的内控计划共享编辑系统后端服务。
+这是一个基于 Node.js + Express + SQLite 的计划管理系统后端服务。
 
 ## 技术栈
 
@@ -132,7 +132,7 @@ node server.js
 
 - `sys_user` - 用户表
 - `sys_group` - 小组表
-- `icp_plan` - 内控计划表
+- `icp_plan` - 计划表
 - `sys_operation_log` - 操作日志表
 - `sys_notification` - 消息通知表
 - `sys_login_attempt` - 登录尝试记录表

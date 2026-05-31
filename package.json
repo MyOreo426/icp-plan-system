@@ -1,7 +1,7 @@
 {
   "name": "icp-plan-system",
   "version": "1.0.0",
-  "description": "内控计划共享编辑系统后端",
+  "description": "计划管理系统后端",
   "main": "server.js",
   "repository": {
     "type": "git",

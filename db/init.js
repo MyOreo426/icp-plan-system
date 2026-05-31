@@ -241,7 +241,7 @@ async function initDatabase() {
     `);
     console.log('✓ sys_group 表创建完成');
 
-    // 创建内控计划表
+    // 创建计划表
     database.run(`
       CREATE TABLE IF NOT EXISTS icp_plan (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -390,7 +390,7 @@ function insertSeedData(db) {
   `).run('200001', directorPassword, '王主任', 'director@example.com', 'DIRECTOR', 1);
   console.log('✓ 创建测试主任: 工号200001, 密码director123');
 
-  // 6. 插入测试内控计划数据
+  // 6. 插入测试计划数据
   const today = new Date().toISOString().split('T')[0];
   const overdueDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -413,7 +413,7 @@ function insertSeedData(db) {
   // 先记录计划2的参数，等leader2/group2创建后再插入
   let plan2Pending = true;
 
-  console.log('✓ 插入1条测试内控计划数据（计划2待风控二组创建后插入）');
+  console.log('✓ 插入1条测试计划数据（计划2待风控二组创建后插入）');
 
   // ===== 扩充种子数据：额外小组、用户和50条计划 =====
 
@@ -622,7 +622,7 @@ function insertSeedData(db) {
     );
   });
 
-  console.log('✓ 插入50条测试内控计划数据');
+  console.log('✓ 插入50条测试计划数据');
   console.log(`  合计：3小组/10用户/52条计划（含2条基础+50条扩充）`);
 }
 
