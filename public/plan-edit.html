@@ -358,21 +358,37 @@
                             <input type="text" class="form-input" id="category" placeholder="合规检查" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">责任人<span style="color:red;">*</span></label>
+                            <label class="form-label">项目</label>
+                            <input type="text" class="form-input" id="project" placeholder="所属项目">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">行动项 <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="action_item" placeholder="具体的行动项描述" required>
+                        </div>
+                    </div>
+                    <div class="form-row cols-4">
+                        <div class="form-group">
+                            <label class="form-label">计划来源</label>
+                            <input type="text" class="form-input" id="plan_source" placeholder="年度计划">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">交付物</label>
+                            <input type="text" class="form-input" id="deliverable" placeholder="计划交付的成果物">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">责任人 <span class="required">*</span></label>
                             <select class="form-select" id="responsible_id" required>
                                 <option value="">-- 选择 --</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">计划来源</label>
-                            <input type="text" class="form-input" id="plan_source" placeholder="年度计划">
+                            <label class="form-label">所属组</label>
+                            <select class="form-select" id="group_id">
+                                <option value="">-- 自动跟随责任人 --</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row cols-4">
-                        <div class="form-group">
-                            <label class="form-label">项目名称</label>
-                            <input type="text" class="form-input" id="project" placeholder="所属项目">
-                        </div>
                         <div class="form-group">
                             <label class="form-label">下发日期</label>
                             <input type="date" class="form-input" id="plan_issue_date">
@@ -382,6 +398,10 @@
                             <input type="date" class="form-input" id="plan_deadline" required>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">当前进展</label>
+                            <input type="text" class="form-input" id="current_progress" placeholder="工作进展简述">
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">状态</label>
                             <select class="form-select" id="status">
                                 <option value="PENDING">待执行</option>
@@ -389,22 +409,6 @@
                                 <option value="CLOSED">已归零</option>
                                 <option value="CONTINUOUS">持续开展</option>
                             </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group full">
-                            <label class="form-label">行动项 <span class="required">*</span></label>
-                            <input type="text" class="form-input" id="action_item" placeholder="具体的行动项描述" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">交付物</label>
-                            <input type="text" class="form-input" id="deliverable" placeholder="计划交付的成果物">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">当前进展</label>
-                            <input type="text" class="form-input" id="current_progress" placeholder="工作进展简述">
                         </div>
                     </div>
                     <div class="form-row">
@@ -618,6 +622,36 @@
             if (!isEditMode && currentUser) {
                 select.value = currentUser.id;
             }
+            // 责任人变更时自动更新所属组
+            updateGroupByResponsible();
+        }
+
+        // 加载小组列表
+        async function loadGroups() {
+            try {
+                const data = await apiRequest(`${API_BASE}/groups`);
+                if (data.code === 200) {
+                    const groups = data.data.list || data.data || [];
+                    const select = document.getElementById('group_id');
+                    select.innerHTML = '<option value="">-- 自动跟随责任人 --</option>';
+                    groups.forEach(g => {
+                        select.innerHTML += `<option value="${g.id}">${g.group_name}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error('加载小组列表失败', e);
+            }
+        }
+
+        // 根据责任人自动选择所属组
+        function updateGroupByResponsible() {
+            const responsibleId = document.getElementById('responsible_id').value;
+            if (responsibleId) {
+                const member = groupMembers.find(m => m.id == responsibleId);
+                if (member && member.group_id) {
+                    document.getElementById('group_id').value = member.group_id;
+                }
+            }
         }
 
         // 加载计划详情
@@ -643,8 +677,9 @@
                 const plan = data.data;
                 originalStatus = plan.status;
 
-                // 获取组成员
+                // 获取组成员和小组列表
                 await loadUserInfo();
+                await loadGroups();
 
                 // 填充表单
                 document.getElementById('seq_no').value = plan.seq_no || '';
@@ -654,6 +689,7 @@
                 document.getElementById('action_item').value = plan.action_item || '';
                 document.getElementById('deliverable').value = plan.deliverable || '';
                 document.getElementById('responsible_id').value = plan.responsible_id || '';
+                document.getElementById('group_id').value = plan.group_id || '';
                 document.getElementById('plan_issue_date').value = plan.plan_issue_date || '';
                 document.getElementById('plan_deadline').value = plan.plan_deadline || '';
                 document.getElementById('current_progress').value = plan.current_progress || '';
@@ -740,6 +776,7 @@
                 action_item,
                 deliverable: document.getElementById('deliverable').value,
                 responsible_id: document.getElementById('responsible_id').value ? parseInt(document.getElementById('responsible_id').value) : null,
+                group_id: document.getElementById('group_id').value ? parseInt(document.getElementById('group_id').value) : null,
                 plan_issue_date: document.getElementById('plan_issue_date').value || null,
                 plan_deadline,
                 current_progress: document.getElementById('current_progress').value,

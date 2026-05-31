@@ -248,6 +248,22 @@
         .col-remark { width: 150px; }
         .col-action-btns { width: 140px; }
 
+
+        /* 操作列固定在右侧 */
+        .col-action-btns {
+            position: sticky;
+            right: 0;
+            background: white;
+            z-index: 2;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.06);
+        }
+        thead .col-action-btns {
+            background: #f8fafc;
+        }
+        tr:hover .col-action-btns {
+            background: #fafbff;
+        }
+
         /* 状态标签 */
         .status-badge {
             display: inline-block;
@@ -756,6 +772,7 @@
                 document.getElementById('dashboardNavBtn').style.display = 'none';
                 document.getElementById('planListNavBtn').style.display = 'none';
                 document.getElementById('importExportNavBtn').style.display = 'none';
+                document.getElementById('planExcelNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';
                 document.getElementById('groupNavBtn').style.display = 'flex';
