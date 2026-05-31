@@ -195,4 +195,37 @@ router.put('/:id', requireRole('ADMIN'), (req, res) => {
   return success(res, updatedGroup, '小组更新成功');
 });
 
+
+/**
+ * DELETE /api/groups/:id
+ * 删除小组（仅管理员）
+ * 前提：小组内不能有成员
+ */
+router.delete('/:id', requireRole('ADMIN'), (req, res) => {
+  const db = getDb();
+  const { id } = req.params;
+
+  const group = db.prepare('SELECT * FROM sys_group WHERE id = ?').get(id);
+  if (!group) {
+    return error(res, 404, '小组不存在');
+  }
+
+  // 检查是否有成员
+  const memberCount = db.prepare('SELECT COUNT(*) as count FROM sys_user WHERE group_id = ? AND status = 1').get(id).count;
+  if (memberCount > 0) {
+    return error(res, 400, `该小组还有 ${memberCount} 名成员，请先转移或删除成员后再删除小组`);
+  }
+
+  // 检查是否有关联的计划
+  const planCount = db.prepare('SELECT COUNT(*) as count FROM icp_plan WHERE group_id = ? AND is_deleted = 0').get(id).count;
+  if (planCount > 0) {
+    return error(res, 400, `该小组还有 ${planCount} 条计划，请先转移或删除计划后再删除小组`);
+  }
+
+  // 软删除
+  db.prepare('UPDATE sys_group SET status = 0 WHERE id = ?').run(id);
+
+  return success(res, null, '小组删除成功');
+});
+
 module.exports = router;

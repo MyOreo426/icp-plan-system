@@ -1010,11 +1010,36 @@
                         <div class="group-info">部门: <strong>${g.department || '-'}</strong></div>
                         <div class="group-info">组长: <strong>${g.leader_name || '待设置'}</strong></div>
                         <div class="group-info">成员数: <strong>${g.member_count || 0}</strong></div>
-                        <button class="btn btn-outline" style="margin-top:10px;font-size:12px;padding:4px 12px;" onclick="editGroup(${g.id}, '${g.group_name.replace(/'/g,"\\'")}', '${(g.department||'').replace(/'/g,"\\'")}', ${g.leader_id || 'null'})">编辑</button>
+                        <div style="margin-top:10px;display:flex;gap:8px;">
+                            <button class="btn btn-outline" style="font-size:12px;padding:4px 12px;" onclick="editGroup(${g.id}, '${g.group_name.replace(/'/g,"\\'")}', '${(g.department||'').replace(/'/g,"\\'")}', ${g.leader_id || 'null'})">编辑</button>
+                            <button class="btn btn-danger" style="font-size:12px;padding:4px 12px;" onclick="deleteGroup(${g.id}, '${g.group_name.replace(/'/g,"\\'")}')">删除</button>
+                        </div>
                     </div>
                 `).join('');
             } catch (e) {
                 document.getElementById('groupGrid').innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        // 删除小组
+        async function deleteGroup(id, name) {
+            if (!confirm(`确定要删除小组"${name}"吗？
+
+注意：小组内有成员或计划时无法删除。`)) {
+                return;
+            }
+            try {
+                const data = await apiRequest(`${API_BASE}/groups/${id}`, {
+                    method: 'DELETE'
+                });
+                if (data.code === 200) {
+                    alert('小组删除成功');
+                    loadGroups();
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('删除失败: 网络错误');
             }
         }
 
