@@ -55,11 +55,11 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// 登录接口更严格的限流：每IP每分钟5次
+// 登录接口更严格的限流：每IP每30秒5次
 const loginLimiter = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: 30 * 1000,
   max: 5,
-  message: { code: 429, message: '登录尝试过于频繁，请1分钟后再试', data: null }
+  message: { code: 429, message: '登录尝试过于频繁，请30秒后再试', data: null }
 });
 app.use('/api/auth/login', loginLimiter);
 

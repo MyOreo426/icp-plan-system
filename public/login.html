@@ -188,7 +188,7 @@
         <form id="loginForm">
             <div class="form-group">
                 <label for="username">工号</label>
-                <input type="text" id="username" name="username" placeholder="请输入6位工号" maxlength="6" required autocomplete="username">
+                <input type="text" id="username" name="username" placeholder="请输入工号" maxlength="20" required autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="password">密码</label>
@@ -204,20 +204,24 @@
             <div class="demo-title">测试账号</div>
             <div class="demo-list">
                 <div class="demo-item" onclick="fillDemo('000000', 'admin123')">
-                    <span class="demo-role">👤 管理员</span>
+                    <span class="demo-role">⚙️ 管理员</span>
                     <span class="demo-account">工号: 000000 / 密码: admin123</span>
                 </div>
-                <div class="demo-item" onclick="fillDemo('100001', 'leader123')">
-                    <span class="demo-role">👥 组长</span>
-                    <span class="demo-account">工号: 100001 / 密码: leader123</span>
+                <div class="demo-item" onclick="fillDemo('MY', 'leader123')">
+                    <span class="demo-role">👥 组长（综合计划组）</span>
+                    <span class="demo-account">工号: MY / 密码: leader123</span>
                 </div>
-                <div class="demo-item" onclick="fillDemo('100002', 'member123')">
-                    <span class="demo-role">👤 组员</span>
-                    <span class="demo-account">工号: 100002 / 密码: member123</span>
+                <div class="demo-item" onclick="fillDemo('DH', 'leader123')">
+                    <span class="demo-role">👥 组长（客户管理组）</span>
+                    <span class="demo-account">工号: DH / 密码: leader123</span>
                 </div>
-                <div class="demo-item" onclick="fillDemo('200001', 'director123')">
-                    <span class="demo-role">🏢 主任</span>
-                    <span class="demo-account">工号: 200001 / 密码: director123</span>
+                <div class="demo-item" onclick="fillDemo('ZZY', 'member123')">
+                    <span class="demo-role">👤 组员（综合计划组）</span>
+                    <span class="demo-account">工号: ZZY / 密码: member123</span>
+                </div>
+                <div class="demo-item" onclick="fillDemo('A1', 'member123')">
+                    <span class="demo-role">👤 组员（客户管理组）</span>
+                    <span class="demo-account">工号: A1 / 密码: member123</span>
                 </div>
             </div>
         </div>

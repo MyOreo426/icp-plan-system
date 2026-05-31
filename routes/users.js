@@ -106,9 +106,9 @@ router.post('/', requireRole('ADMIN'), (req, res) => {
     return error(res, 400, '工号、姓名和角色不能为空');
   }
 
-  // 验证工号格式（6位数字）
-  if (!/^\d{6}$/.test(username)) {
-    return error(res, 400, '工号必须为6位数字');
+  // 验证工号格式（字母+数字，2-20位）
+  if (!/^[A-Za-z0-9]{2,20}$/.test(username)) {
+    return error(res, 400, '工号只能包含字母和数字，长度2-20位');
   }
 
   // 检查工号是否已存在

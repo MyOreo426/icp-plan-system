@@ -13,7 +13,7 @@ const JWT_EXPIRES_IN = '7d'; // Token有效期7天
 
 // 登录失败锁定配置
 const MAX_LOGIN_ATTEMPTS = 5;  // 最大失败次数
-const LOCK_DURATION = 15 * 60 * 1000; // 锁定时长15分钟
+const LOCK_DURATION = 3 * 60 * 1000; // 锁定时长3分钟
 
 /**
  * 生成JWT Token
