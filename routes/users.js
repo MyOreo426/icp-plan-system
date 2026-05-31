@@ -14,6 +14,28 @@ const router = express.Router();
 // 所有路由都需要认证
 router.use(authenticate);
 
+
+/**
+ * GET /api/users/members
+ * 获取所有组员基本信息（已登录用户可用，用于下拉选择责任人）
+ */
+router.get('/members', (req, res) => {
+  const db = getDb();
+  try {
+    const members = db.prepare(`
+      SELECT u.id, u.real_name, u.role, u.group_id, g.group_name
+      FROM sys_user u
+      LEFT JOIN sys_group g ON u.group_id = g.id
+      WHERE u.status = 1
+      ORDER BY u.group_id, u.role, u.real_name
+    `).all();
+    return success(res, members);
+  } catch (err) {
+    console.error('获取组成员列表失败:', err);
+    return error(res, 500, '获取组成员列表失败');
+  }
+});
+
 /**
  * GET /api/users
  * 获取用户列表（管理员和主任）

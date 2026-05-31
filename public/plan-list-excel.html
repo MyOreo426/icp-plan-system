@@ -590,6 +590,7 @@
                 <span class="user-name" id="userName">加载中...</span>
                 <span class="user-role" id="userRole">--</span>
             </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
             <button class="logout-btn" onclick="logout()">退出</button>
         </div>
     </nav>
@@ -930,16 +931,10 @@
         // 加载用户列表
         async function loadGroupMembers() {
             try {
-                if (['ADMIN', 'DIRECTOR'].includes(currentUser.role)) {
-                    const allUsersData = await apiRequest(`${API_BASE}/users`);
-                    if (allUsersData.code === 200) {
-                        groupMembers = allUsersData.data.list || allUsersData.data || [];
-                    }
-                } else {
-                    const data = await apiRequest(`${API_BASE}/user/info`);
-                    if (data.code === 200) {
-                        groupMembers = data.data.groupMembers || [];
-                    }
+                // 所有角色统一使用members接口获取所有组成员
+                const membersData = await apiRequest(`${API_BASE}/users/members`);
+                if (membersData.code === 200) {
+                    groupMembers = membersData.data || [];
                 }
                 allMembers = [...groupMembers];
                 // 加载小组列表

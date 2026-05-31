@@ -352,6 +352,7 @@
                 <span class="user-name" id="userName">加载中...</span>
                 <span class="user-role" id="userRole">--</span>
             </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
             <button class="logout-btn" onclick="logout()">退出</button>
         </div>
     </nav>
@@ -644,17 +645,10 @@
         // 获取用户信息和组成员
         async function loadUserInfo() {
             try {
-                // 管理员或主任可以查看所有用户，其他角色只看组成员
-                if (['ADMIN', 'DIRECTOR'].includes(currentUser.role)) {
-                    const allUsersData = await apiRequest(`${API_BASE}/users`);
-                    if (allUsersData.code === 200) {
-                        allMembers = allUsersData.data.list || allUsersData.data || [];
-                    }
-                } else {
-                    const data = await apiRequest(`${API_BASE}/user/info`);
-                    if (data.code === 200) {
-                        allMembers = data.data.groupMembers || [];
-                    }
+                // 所有角色统一使用members接口获取所有组成员
+                const membersData = await apiRequest(`${API_BASE}/users/members`);
+                if (membersData.code === 200) {
+                    allMembers = membersData.data || [];
                 }
                 groupMembers = allMembers;
             } catch (e) {
