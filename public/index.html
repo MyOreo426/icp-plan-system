@@ -433,8 +433,8 @@
 
         // Auth check
         function checkAuth() {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
             if (!token || !userStr) {
                 window.location.href = 'login.html';
                 return null;
@@ -447,18 +447,18 @@
 
         // Logout
         function logout() {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
             }
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
 
         // Get auth headers
         function getHeaders() {
-            return { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+            return { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` };
         }
 
         // Format date
@@ -490,8 +490,8 @@
             try {
                 const res = await fetch(`${API_BASE}/plans?page=1&pageSize=999`, { headers: getHeaders() });
                 if (res.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                     window.location.href = 'login.html';
                     return [];
                 }

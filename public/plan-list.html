@@ -639,8 +639,8 @@
 
         // 检查登录
         function checkAuth() {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
             if (!token || !userStr) {
                 window.location.href = 'login.html';
                 return null;
@@ -650,7 +650,7 @@
 
         // API请求
         async function apiRequest(url, options = {}) {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const defaultOptions = {
                 headers: {
                     'Content-Type': 'application/json',
@@ -668,8 +668,8 @@
             const res = await fetch(url, mergedOptions);
             const data = await res.json();
             if (data.code === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
                 window.location.href = 'login.html';
                 throw new Error('登录已过期');
             }
@@ -1262,15 +1262,15 @@
 
         // 登出
         function logout() {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 fetch(`${API_BASE}/auth/logout`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).catch(() => {});
             }
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
 

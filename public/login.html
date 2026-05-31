@@ -250,7 +250,7 @@
 
         // 页面加载时检查是否已登录
         document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 // 验证token是否有效
                 fetch(`${API_BASE}/user/info`, {
@@ -264,12 +264,12 @@
                             redirectByRole(data.data.role);
                         }
                     } else {
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('token');
+                        sessionStorage.removeItem('user');
                     }
                 }).catch(() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                 });
             }
         });
@@ -313,8 +313,8 @@
                 const data = await res.json();
 
                 if (data.code === 200) {
-                    localStorage.setItem('token', data.data.token);
-                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    sessionStorage.setItem('token', data.data.token);
+                    sessionStorage.setItem('user', JSON.stringify(data.data.user));
 
                     // 检查是否需要修改密码
                     if (data.data.user.must_change_password === 1) {
@@ -355,7 +355,7 @@
                 return;
             }
 
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             try {
                 const res = await fetch(`${API_BASE}/auth/password`, {
                     method: 'PUT',
@@ -376,7 +376,7 @@
                     });
                     const userData = await userRes.json();
                     if (userData.code === 200) {
-                        localStorage.setItem('user', JSON.stringify(userData.data));
+                        sessionStorage.setItem('user', JSON.stringify(userData.data));
                         redirectByRole(userData.data.role);
                     }
                 } else {
@@ -398,8 +398,8 @@
 
         // 登出
         function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
     </script>
