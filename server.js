@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const path = require('path');
 
@@ -43,8 +44,24 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json()); // 解析JSON请求体
-app.use(express.urlencoded({ extended: true })); // 解析URL编码
+app.use(express.json({ limit: '1mb' })); // 解析JSON请求体，限制1MB
+app.use(express.urlencoded({ extended: true, limit: '1mb' })); // 解析URL编码，限制1MB
+
+// API速率限制
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1分钟
+  max: 60, // 每IP每分钟60次请求
+  message: { code: 429, message: '请求过于频繁，请稍后再试', data: null }
+});
+app.use('/api/', apiLimiter);
+
+// 登录接口更严格的限流：每IP每分钟5次
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: { code: 429, message: '登录尝试过于频繁，请1分钟后再试', data: null }
+});
+app.use('/api/auth/login', loginLimiter);
 
 // 内容安全策略（CSP）- 允许内联脚本和事件处理
 app.use((req, res, next) => {

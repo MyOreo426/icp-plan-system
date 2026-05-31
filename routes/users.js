@@ -7,7 +7,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { getDb } = require('../db/init');
 const { authenticate, requireRole } = require('../middleware/auth');
-const { success, error } = require('../utils/response');
+const { success, error, paginate } = require('../utils/response');
 
 const router = express.Router();
 
@@ -57,19 +57,7 @@ router.get('/', requireRole('ADMIN', 'DIRECTOR'), (req, res) => {
     delete user.password;
   });
 
-  return res.json({
-    code: 200,
-    message: 'success',
-    data: {
-      list: users,
-      pagination: {
-        total: countResult.total,
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
-        totalPages: Math.ceil(countResult.total / parseInt(pageSize))
-      }
-    }
-  });
+  return paginate(res, users, countResult.total, page, pageSize);
 });
 
 /**

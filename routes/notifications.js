@@ -45,27 +45,7 @@ router.get('/', (req, res) => {
     LIMIT ? OFFSET ?
   `).all(...params, parseInt(pageSize), offset);
 
-  // 获取未读数量
-  const unreadCount = db.prepare(`
-    SELECT COUNT(*) as count
-    FROM sys_notification
-    WHERE user_id = ? AND is_read = 0
-  `).get(req.user.id);
-
-  return res.json({
-    code: 200,
-    message: 'success',
-    data: {
-      list: notifications,
-      unread_count: unreadCount.count,
-      pagination: {
-        total: countResult.total,
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
-        totalPages: Math.ceil(countResult.total / parseInt(pageSize))
-      }
-    }
-  });
+  return paginate(res, notifications, countResult.total, page, pageSize);
 });
 
 /**

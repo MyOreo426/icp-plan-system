@@ -342,7 +342,6 @@ router.post('/', requireRole('MEMBER', 'LEADER', 'DIRECTOR', 'ADMIN'), (req, res
   
   // 如果查询不到（sql.js内存数据库状态问题），使用兜底查询获取最新记录
   if (!newPlan && result.lastInsertRowid) {
-    console.log('DEBUG: get()返回undefined，使用兜底查询获取新计划');
     newPlan = db.prepare('SELECT * FROM icp_plan ORDER BY id DESC LIMIT 1').get();
   }
 
