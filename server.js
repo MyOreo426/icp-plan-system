@@ -147,9 +147,10 @@ async function startServer() {
       if (process.env.NODE_ENV !== 'production') {
         console.log('  测试账号:');
         console.log('  - 管理员: 工号 000000 / 密码 admin123');
-        console.log('  - 组长:   工号 100001 / 密码 leader123');
-        console.log('  - 组员:   工号 100002 / 密码 member123');
-        console.log('  - 主任:   工号 200001 / 密码 director123');
+        console.log('  - 综合计划组组长: 工号 MY / 密码 leader123');
+        console.log('  - 综合计划组组员: 工号 ZZY、WMY / 密码 member123');
+        console.log('  - 客户管理组组长: 工号 DH / 密码 leader123');
+        console.log('  - 客户管理组组员: 工号 A1、A2、A3 / 密码 member123');
       } else {
         console.log('  运行环境: production (测试账号已隐藏)');
       }

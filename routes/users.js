@@ -230,6 +230,24 @@ router.put('/:id', (req, res) => {
     params.push(phone || null);
   }
   if (role !== undefined && req.user.role === 'ADMIN') {
+    if (role === 'LEADER') {
+      // 组员→组长：检查该用户所在组是否已有组长
+      const targetGroupId = group_id !== undefined ? group_id : user.group_id;
+      if (targetGroupId) {
+        const targetGroup = db.prepare('SELECT * FROM sys_group WHERE id = ?').get(targetGroupId);
+        if (targetGroup && targetGroup.leader_id && targetGroup.leader_id !== parseInt(id)) {
+          return error(res, 400, '该小组已有组长，请先更换原组长');
+        }
+      } else {
+        // 没有组的用户设为组长，需要指定或创建小组
+        return error(res, 400, '组长必须关联小组，请同时指定所属组');
+      }
+    } else if (user.role === 'LEADER') {
+      // 组长→非组长：清除其所在小组的leader_id
+      if (user.group_id) {
+        db.prepare('UPDATE sys_group SET leader_id = NULL WHERE leader_id = ?').run(id);
+      }
+    }
     updateFields.push('role = ?');
     params.push(role);
   }
@@ -256,6 +274,14 @@ router.put('/:id', (req, res) => {
   params.push(id);
 
   db.prepare(`UPDATE sys_user SET ${updateFields.join(', ')} WHERE id = ?`).run(...params);
+
+  // 如果角色变为组长，自动更新其所在小组的leader_id
+  if (role === 'LEADER') {
+    const finalGroupId = group_id !== undefined ? group_id : user.group_id;
+    if (finalGroupId) {
+      db.prepare('UPDATE sys_group SET leader_id = ? WHERE id = ?').run(id, finalGroupId);
+    }
+  }
 
   const updatedUser = db.prepare(`
     SELECT u.*, g.group_name

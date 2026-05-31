@@ -928,6 +928,10 @@
                         alert('修改成功');
                         closeUserModal();
                         loadUsers(currentUserPage);
+                        // 同步刷新小组列表（组长名字可能变了）
+                        if (document.getElementById('groupsSection').style.display !== 'none') {
+                            loadGroups();
+                        }
                     } else {
                         alert('修改失败: ' + data.message);
                     }
