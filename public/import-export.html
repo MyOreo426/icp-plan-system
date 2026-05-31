@@ -250,6 +250,48 @@
         .notification-text { font-size: 13px; color: #34495e; line-height: 1.5; }
         .notification-time { font-size: 11px; color: #95a5a6; margin-top: 4px; }
         .notification-empty { padding: 40px 20px; text-align: center; color: #95a5a6; font-size: 13px; }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
     </style>
 </head>
 <body>
@@ -772,5 +814,24 @@
             }
         });
     </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

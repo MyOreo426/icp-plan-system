@@ -240,7 +240,8 @@
                     <label for="confirmPassword">确认密码</label>
                     <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入新密码" minlength="6" required>
                 </div>
-                <div class="modal-actions">
+                <div id="passwordModalError" style="color:#e74c3c;font-size:13px;margin-top:10px;display:none;"></div>
+            <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="logout()">取消</button>
                     <button type="submit" class="btn btn-primary">确认修改</button>
                 </div>
@@ -349,14 +350,13 @@
             e.preventDefault();
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const errEl = document.getElementById('passwordModalError');
 
             if (newPassword !== confirmPassword) {
-                showError('两次输入的密码不一致');
-                return;
+                errEl.textContent = '两次输入的密码不一致'; errEl.style.display = 'block'; return;
             }
             if (newPassword.length < 6) {
-                showError('密码长度不能少于6位');
-                return;
+                errEl.textContent = '密码长度不能少于6位'; errEl.style.display = 'block'; return;
             }
 
             const token = sessionStorage.getItem('token');
@@ -372,7 +372,6 @@
                 const data = await res.json();
 
                 if (data.code === 200) {
-                    alert('密码修改成功！');
                     document.getElementById('passwordModal').classList.remove('show');
                     // 获取最新用户信息并跳转
                     const userRes = await fetch(`${API_BASE}/user/info`, {
@@ -384,10 +383,10 @@
                         redirectByRole(userData.data.role);
                     }
                 } else {
-                    showError(data.message);
+                    errEl.textContent = data.message || '修改失败'; errEl.style.display = 'block';
                 }
             } catch (err) {
-                showError('网络错误');
+                errEl.textContent = '网络错误'; errEl.style.display = 'block';
             }
         });
 
