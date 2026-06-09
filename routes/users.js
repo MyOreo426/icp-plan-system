@@ -7,12 +7,34 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { getDb } = require('../db/init');
 const { authenticate, requireRole } = require('../middleware/auth');
-const { success, error } = require('../utils/response');
+const { success, error, paginate } = require('../utils/response');
 
 const router = express.Router();
 
 // 所有路由都需要认证
 router.use(authenticate);
+
+
+/**
+ * GET /api/users/members
+ * 获取所有组员基本信息（已登录用户可用，用于下拉选择责任人）
+ */
+router.get('/members', (req, res) => {
+  const db = getDb();
+  try {
+    const members = db.prepare(`
+      SELECT u.id, u.real_name, u.role, u.group_id, g.group_name
+      FROM sys_user u
+      LEFT JOIN sys_group g ON u.group_id = g.id
+      WHERE u.status = 1
+      ORDER BY u.group_id, u.role, u.real_name
+    `).all();
+    return success(res, members);
+  } catch (err) {
+    console.error('获取组成员列表失败:', err);
+    return error(res, 500, '获取组成员列表失败');
+  }
+});
 
 /**
  * GET /api/users
@@ -57,19 +79,7 @@ router.get('/', requireRole('ADMIN', 'DIRECTOR'), (req, res) => {
     delete user.password;
   });
 
-  return res.json({
-    code: 200,
-    message: 'success',
-    data: {
-      list: users,
-      pagination: {
-        total: countResult.total,
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
-        totalPages: Math.ceil(countResult.total / parseInt(pageSize))
-      }
-    }
-  });
+  return paginate(res, users, countResult.total, page, pageSize);
 });
 
 /**
@@ -118,9 +128,9 @@ router.post('/', requireRole('ADMIN'), (req, res) => {
     return error(res, 400, '工号、姓名和角色不能为空');
   }
 
-  // 验证工号格式（6位数字）
-  if (!/^\d{6}$/.test(username)) {
-    return error(res, 400, '工号必须为6位数字');
+  // 验证工号格式（字母+数字，2-20位）
+  if (!/^[A-Za-z0-9]{2,20}$/.test(username)) {
+    return error(res, 400, '工号只能包含字母和数字，长度2-20位');
   }
 
   // 检查工号是否已存在
@@ -242,6 +252,24 @@ router.put('/:id', (req, res) => {
     params.push(phone || null);
   }
   if (role !== undefined && req.user.role === 'ADMIN') {
+    if (role === 'LEADER') {
+      // 组员→组长：检查该用户所在组是否已有组长
+      const targetGroupId = group_id !== undefined ? group_id : user.group_id;
+      if (targetGroupId) {
+        const targetGroup = db.prepare('SELECT * FROM sys_group WHERE id = ?').get(targetGroupId);
+        if (targetGroup && targetGroup.leader_id && targetGroup.leader_id !== parseInt(id)) {
+          return error(res, 400, '该小组已有组长，请先更换原组长');
+        }
+      } else {
+        // 没有组的用户设为组长，需要指定或创建小组
+        return error(res, 400, '组长必须关联小组，请同时指定所属组');
+      }
+    } else if (user.role === 'LEADER') {
+      // 组长→非组长：清除其所在小组的leader_id
+      if (user.group_id) {
+        db.prepare('UPDATE sys_group SET leader_id = NULL WHERE leader_id = ?').run(id);
+      }
+    }
     updateFields.push('role = ?');
     params.push(role);
   }
@@ -268,6 +296,14 @@ router.put('/:id', (req, res) => {
   params.push(id);
 
   db.prepare(`UPDATE sys_user SET ${updateFields.join(', ')} WHERE id = ?`).run(...params);
+
+  // 如果角色变为组长，自动更新其所在小组的leader_id
+  if (role === 'LEADER') {
+    const finalGroupId = group_id !== undefined ? group_id : user.group_id;
+    if (finalGroupId) {
+      db.prepare('UPDATE sys_group SET leader_id = ? WHERE id = ?').run(id, finalGroupId);
+    }
+  }
 
   const updatedUser = db.prepare(`
     SELECT u.*, g.group_name

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>仪表盘 - 内控计划共享编辑系统</title>
+    <title>仪表盘 - 计划管理系统</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -290,6 +290,48 @@
         @media (max-width: 480px) {
             .stats-container { grid-template-columns: 1fr; }
         }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
     </style>
 </head>
 <body>
@@ -299,7 +341,7 @@
             <div class="logo">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
             </div>
-            <span class="system-title">内控计划共享编辑系统</span>
+            <span class="system-title">计划管理系统</span>
             <div class="nav-divider"></div>
             <a href="index.html" class="nav-btn active" id="dashboardNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
@@ -339,6 +381,7 @@
                 <span class="user-name" id="userName">加载中...</span>
                 <span class="user-role" id="userRole">--</span>
             </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
             <button class="logout-btn" id="logoutBtn">退出</button>
         </div>
     </nav>
@@ -433,8 +476,8 @@
 
         // Auth check
         function checkAuth() {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
             if (!token || !userStr) {
                 window.location.href = 'login.html';
                 return null;
@@ -447,18 +490,18 @@
 
         // Logout
         function logout() {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
             }
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
 
         // Get auth headers
         function getHeaders() {
-            return { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+            return { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` };
         }
 
         // Format date
@@ -490,8 +533,8 @@
             try {
                 const res = await fetch(`${API_BASE}/plans?page=1&pageSize=999`, { headers: getHeaders() });
                 if (res.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                     window.location.href = 'login.html';
                     return [];
                 }
@@ -963,5 +1006,24 @@
         // Start
         init();
     </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

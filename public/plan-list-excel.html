@@ -498,6 +498,48 @@
         .notification-text { font-size: 13px; color: #34495e; }
         .notification-time { font-size: 11px; color: #95a5a6; margin-top: 4px; }
         .notification-empty { padding: 40px 20px; text-align: center; color: #95a5a6; }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
     </style>
 </head>
 <body>
@@ -507,7 +549,7 @@
             <div class="logo">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
             </div>
-            <span class="system-title">内控计划共享编辑系统</span>
+            <span class="system-title">计划管理系统</span>
             <div class="nav-divider"></div>
             <a href="index.html" class="nav-btn" id="dashboardNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
@@ -548,6 +590,7 @@
                 <span class="user-name" id="userName">加载中...</span>
                 <span class="user-role" id="userRole">--</span>
             </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
             <button class="logout-btn" onclick="logout()">退出</button>
         </div>
     </nav>
@@ -610,8 +653,8 @@
                             <th class="col-action">行动项</th>
                             <th class="col-source">计划来源</th>
                             <th class="col-deliverable">交付物</th>
-                            <th class="col-responsible">责任人</th>
                             <th class="col-group">所属组</th>
+                            <th class="col-responsible">责任人</th>
                             <th class="col-issue-date">下发日期</th>
                             <th class="col-deadline">截止日期</th>
                             <th class="col-progress">当前进展</th>
@@ -682,6 +725,8 @@
         let currentPage = 1;
         let deletePlanId = null;
         let groupMembers = [];
+        let allMembers = [];
+        let allGroups = [];
         let isAddingNew = false;
         let editingCell = null;
         let selectedRow = null;
@@ -698,8 +743,8 @@
 
         // 检查登录
         function checkAuth() {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
             if (!token || !userStr) {
                 window.location.href = 'login.html';
                 return null;
@@ -709,7 +754,7 @@
 
         // API请求
         async function apiRequest(url, options = {}) {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const defaultOptions = {
                 headers: {
                     'Content-Type': 'application/json',
@@ -727,8 +772,8 @@
             const res = await fetch(url, mergedOptions);
             const data = await res.json();
             if (data.code === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
                 window.location.href = 'login.html';
                 throw new Error('登录已过期');
             }
@@ -886,19 +931,47 @@
         // 加载用户列表
         async function loadGroupMembers() {
             try {
-                if (['ADMIN', 'DIRECTOR'].includes(currentUser.role)) {
-                    const allUsersData = await apiRequest(`${API_BASE}/users`);
-                    if (allUsersData.code === 200) {
-                        groupMembers = allUsersData.data.list || allUsersData.data || [];
-                    }
-                } else {
-                    const data = await apiRequest(`${API_BASE}/user/info`);
-                    if (data.code === 200) {
-                        groupMembers = data.data.groupMembers || [];
-                    }
+                // 所有角色统一使用members接口获取所有组成员
+                const membersData = await apiRequest(`${API_BASE}/users/members`);
+                if (membersData.code === 200) {
+                    groupMembers = membersData.data || [];
+                }
+                allMembers = [...groupMembers];
+                // 加载小组列表
+                const groupsData = await apiRequest(`${API_BASE}/groups`);
+                if (groupsData.code === 200) {
+                    allGroups = groupsData.data.list || groupsData.data || [];
                 }
             } catch (e) {
                 groupMembers = [];
+                allMembers = [];
+                allGroups = [];
+            }
+        }
+
+        // 根据所属组过滤责任人下拉
+        function renderResponsibleSelect(selectEl, selectedId, groupId) {
+            const currentValue = selectEl.value || selectedId;
+            selectEl.innerHTML = '<option value="">-- 请选择 --</option>';
+            const members = groupId ? allMembers.filter(m => m.group_id == groupId) : allMembers;
+            members.forEach(m => {
+                const selected = m.id == currentValue ? 'selected' : '';
+                selectEl.innerHTML += `<option value="${m.id}" ${selected}>${m.real_name} (${m.username})</option>`;
+            });
+            // 尝试恢复之前选中的值
+            if (currentValue && members.find(m => m.id == currentValue)) {
+                selectEl.value = currentValue;
+            }
+        }
+
+        // 根据责任人自动同步所属组
+        function updateGroupByResponsible(groupSelect, responsibleSelect) {
+            const responsibleId = responsibleSelect.value;
+            if (responsibleId) {
+                const member = allMembers.find(m => m.id == responsibleId);
+                if (member && member.group_id) {
+                    groupSelect.value = member.group_id;
+                }
             }
         }
 
@@ -992,8 +1065,14 @@
                     html += `<td class="col-action"><input type="text" class="inline-input" name="edit_action_item" value="${plan.action_item || ''}" placeholder="行动项"></td>`;
                     html += `<td class="col-source"><input type="text" class="inline-input" name="edit_plan_source" value="${plan.plan_source || ''}" placeholder="计划来源"></td>`;
                     html += `<td class="col-deliverable"><input type="text" class="inline-input" name="edit_deliverable" value="${plan.deliverable || ''}" placeholder="交付物"></td>`;
-                    html += `<td class="col-responsible">${getResponsibleSelectHtml(plan.responsible_id)}</td>`;
-                    html += `<td class="col-group">${plan.group_name || '-'}</td>`;
+                    html += `<td class="col-group"><select class="inline-select" name="edit_group_id" onchange="onNewRowGroupChange(this)">
+                        <option value="">-- 请选择 --</option>
+                        ${allGroups.map(g => `<option value="${g.id}">${g.group_name}</option>`).join('')}
+                    </select></td>`;
+                    html += `<td class="col-responsible"><select class="inline-select" name="edit_responsible_id">
+                        <option value="">-- 请选择 --</option>
+                        ${allMembers.map(m => `<option value="${m.id}">${m.real_name}</option>`).join('')}
+                    </select></td>`;
                     html += `<td class="col-issue-date"><input type="date" class="inline-input" name="edit_plan_issue_date" value="${plan.plan_issue_date || ''}"></td>`;
                     html += `<td class="col-deadline"><input type="date" class="inline-input" name="edit_plan_deadline" value="${plan.plan_deadline || ''}"></td>`;
                     html += `<td class="col-progress"><input type="text" class="inline-input" name="edit_current_progress" value="${plan.current_progress || ''}" placeholder="当前进展"></td>`;
@@ -1020,8 +1099,8 @@
                     html += `<td class="col-action" onclick="selectCell(this, ${idx}, 'action_item', event)" title="${plan.action_item || ''}">${plan.action_item || '-'}</td>`;
                     html += `<td class="col-source" onclick="selectCell(this, ${idx}, 'plan_source', event)">${plan.plan_source || '-'}</td>`;
                     html += `<td class="col-deliverable" onclick="selectCell(this, ${idx}, 'deliverable', event)" title="${plan.deliverable || ''}">${plan.deliverable || '-'}</td>`;
-                    html += `<td class="col-responsible" onclick="selectCell(this, ${idx}, 'responsible_id', event)">${plan.responsible_name || '<span style="color:#f59e0b;">待分配</span>'}</td>`;
                     html += `<td class="col-group">${plan.group_name || '-'}</td>`;
+                    html += `<td class="col-responsible" onclick="selectCell(this, ${idx}, 'responsible_id', event)">${plan.responsible_name || '<span style="color:#f59e0b;">待分配</span>'}</td>`;
                     html += `<td class="col-issue-date" onclick="selectCell(this, ${idx}, 'plan_issue_date', event)">${plan.plan_issue_date || '-'}</td>`;
                     
                     // 截止日期列
@@ -1047,7 +1126,6 @@
                     html += `<button class="op-btn edit" onclick="saveNewRow()" style="background:#10b981;color:white;">保存</button>`;
                     html += `<button class="op-btn delete" onclick="cancelNewRow()">取消</button>`;
                 } else if (!plan.is_locked && currentUser.role !== 'ADMIN') {
-                    html += `<button class="op-btn edit" onclick="startRowEdit(${idx})">编辑</button>`;
                     html += `<button class="op-btn delete" onclick="openDeleteModal(${plan.id})">删除</button>`;
                 } else if (plan.is_locked && ['LEADER', 'DIRECTOR'].includes(currentUser.role)) {
                     html += `<button class="op-btn unlock" onclick="manualUnlock(${plan.id})">解锁</button>`;
@@ -1158,6 +1236,7 @@
                 'action_item': 'col-action',
                 'plan_source': 'col-source',
                 'deliverable': 'col-deliverable',
+                'group_id': 'col-group',
                 'responsible_id': 'col-responsible',
                 'plan_issue_date': 'col-issue-date',
                 'plan_deadline': 'col-deadline',
@@ -1172,10 +1251,22 @@
                 
                 const currentValue = plan[field] || '';
                 
-                if (field === 'responsible_id') {
-                    let html = '<select class="inline-select" name="edit_' + field + '">';
+                if (field === 'group_id') {
+                    let html = '<select class="inline-select" name="edit_group_id" id="edit_group_id_' + idx + '">';
                     html += '<option value="">-- 请选择 --</option>';
-                    groupMembers.forEach(m => {
+                    allGroups.forEach(g => {
+                        const selected = g.id == plan.group_id ? 'selected' : '';
+                        html += `<option value="${g.id}" ${selected}>${g.group_name}</option>`;
+                    });
+                    html += '</select>';
+                    cell.innerHTML = html;
+                } else if (field === 'responsible_id') {
+                    let html = '<select class="inline-select" name="edit_responsible_id" id="edit_responsible_id_' + idx + '">';
+                    html += '<option value="">-- 请选择 --</option>';
+                    // 按当前所属组过滤责任人
+                    const currentGroupId = plan.group_id;
+                    const filteredMembers = currentGroupId ? allMembers.filter(m => m.group_id == currentGroupId) : allMembers;
+                    filteredMembers.forEach(m => {
                         const selected = m.id == plan.responsible_id ? 'selected' : '';
                         html += `<option value="${m.id}" ${selected}>${m.real_name}</option>`;
                     });
@@ -1197,6 +1288,20 @@
                 
                 cell.classList.add('cell-editing');
             });
+
+            // 所属组变更时过滤责任人下拉
+            const groupSelect = document.getElementById('edit_group_id_' + idx);
+            const responsibleSelect = document.getElementById('edit_responsible_id_' + idx);
+            if (groupSelect && responsibleSelect) {
+                groupSelect.addEventListener('change', function() {
+                    // 清空责任人，重新加载该组成员列表
+                    responsibleSelect.value = '';
+                    renderResponsibleSelect(responsibleSelect, null, this.value);
+                });
+                responsibleSelect.addEventListener('change', function() {
+                    updateGroupByResponsible(groupSelect, responsibleSelect);
+                });
+            }
 
             // 替换操作列为保存/取消按钮
             const opCell = row.querySelector('.col-operation');
@@ -1257,13 +1362,24 @@
             });
         }
 
+
+        // 新增行所属组变更时过滤责任人
+        function onNewRowGroupChange(groupSelectEl) {
+            const row = groupSelectEl.closest('tr');
+            const responsibleSelect = row.querySelector('[name="edit_responsible_id"]');
+            if (responsibleSelect) {
+                responsibleSelect.value = '';
+                renderResponsibleSelect(responsibleSelect, null, groupSelectEl.value);
+            }
+        }
+
         // 保存行编辑
         async function saveRowEdit(idx) {
             const plan = filteredPlans[idx];
             const row = document.querySelector(`tr[data-idx="${idx}"]`);
             if (!row) return;
 
-            const fields = ['category', 'project', 'action_item', 'plan_source', 'deliverable', 'responsible_id', 'plan_issue_date', 'plan_deadline', 'current_progress', 'status', 'remark'];
+            const fields = ['category', 'project', 'action_item', 'plan_source', 'deliverable', 'group_id', 'responsible_id', 'plan_issue_date', 'plan_deadline', 'current_progress', 'status', 'remark'];
             
             const updateData = {};
             let hasError = false;
@@ -1278,13 +1394,19 @@
                     } else if (field === 'category' && !value) {
                         input.classList.add('error');
                         hasError = true;
+                    } else if (field === 'responsible_id' && !value) {
+                        input.classList.add('error');
+                        hasError = true;
+                    } else if (field === 'group_id' && !value) {
+                        input.classList.add('error');
+                        hasError = true;
                     }
                     updateData[field] = value;
                 }
             });
 
             if (hasError) {
-                showSuccessMessage('请填写必填字段');
+                showSuccessMessage('请填写必填字段（类别、所属组、责任人）');
                 return;
             }
 
@@ -1406,6 +1528,7 @@
             const action_item = row.querySelector('[name="edit_action_item"]')?.value?.trim() || '';
             const plan_source = row.querySelector('[name="edit_plan_source"]')?.value?.trim() || '';
             const deliverable = row.querySelector('[name="edit_deliverable"]')?.value?.trim() || '';
+            const group_id = row.querySelector('[name="edit_group_id"]')?.value || '';
             const responsible_id = row.querySelector('[name="edit_responsible_id"]')?.value || (currentUser.role === 'MEMBER' ? currentUser.id : '');
             const plan_issue_date = row.querySelector('[name="edit_plan_issue_date"]')?.value || '';
             const plan_deadline = row.querySelector('[name="edit_plan_deadline"]')?.value || '';
@@ -1442,6 +1565,7 @@
                 action_item,
                 plan_source,
                 deliverable,
+                group_id: group_id ? parseInt(group_id) : null,
                 responsible_id,
                 plan_issue_date,
                 plan_deadline,
@@ -1730,15 +1854,15 @@
 
         // 登出
         function logout() {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 fetch(`${API_BASE}/auth/logout`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).catch(() => {});
             }
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
 
@@ -1771,5 +1895,24 @@
         // 初始化
         init();
     </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

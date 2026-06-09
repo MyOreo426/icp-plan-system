@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 内控计划共享编辑系统</title>
+    <title>登录 - 计划管理系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -179,7 +179,7 @@
             <div class="logo">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
             </div>
-            <h1>内控计划共享编辑系统</h1>
+            <h1>计划管理系统</h1>
             <p class="subtitle">请登录您的账户</p>
         </div>
 
@@ -188,7 +188,7 @@
         <form id="loginForm">
             <div class="form-group">
                 <label for="username">工号</label>
-                <input type="text" id="username" name="username" placeholder="请输入6位工号" maxlength="6" required autocomplete="username">
+                <input type="text" id="username" name="username" placeholder="请输入工号" maxlength="20" required autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="password">密码</label>
@@ -204,20 +204,24 @@
             <div class="demo-title">测试账号</div>
             <div class="demo-list">
                 <div class="demo-item" onclick="fillDemo('000000', 'admin123')">
-                    <span class="demo-role">👤 管理员</span>
+                    <span class="demo-role">⚙️ 管理员</span>
                     <span class="demo-account">工号: 000000 / 密码: admin123</span>
                 </div>
-                <div class="demo-item" onclick="fillDemo('100001', 'leader123')">
-                    <span class="demo-role">👥 组长</span>
-                    <span class="demo-account">工号: 100001 / 密码: leader123</span>
+                <div class="demo-item" onclick="fillDemo('MY', 'leader123')">
+                    <span class="demo-role">👥 组长（综合计划组）</span>
+                    <span class="demo-account">工号: MY / 密码: leader123</span>
                 </div>
-                <div class="demo-item" onclick="fillDemo('100002', 'member123')">
-                    <span class="demo-role">👤 组员</span>
-                    <span class="demo-account">工号: 100002 / 密码: member123</span>
+                <div class="demo-item" onclick="fillDemo('DH', 'leader123')">
+                    <span class="demo-role">👥 组长（客户管理组）</span>
+                    <span class="demo-account">工号: DH / 密码: leader123</span>
                 </div>
-                <div class="demo-item" onclick="fillDemo('200001', 'director123')">
-                    <span class="demo-role">🏢 主任</span>
-                    <span class="demo-account">工号: 200001 / 密码: director123</span>
+                <div class="demo-item" onclick="fillDemo('ZZY', 'member123')">
+                    <span class="demo-role">👤 组员（综合计划组）</span>
+                    <span class="demo-account">工号: ZZY / 密码: member123</span>
+                </div>
+                <div class="demo-item" onclick="fillDemo('A1', 'member123')">
+                    <span class="demo-role">👤 组员（客户管理组）</span>
+                    <span class="demo-account">工号: A1 / 密码: member123</span>
                 </div>
             </div>
         </div>
@@ -236,7 +240,8 @@
                     <label for="confirmPassword">确认密码</label>
                     <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入新密码" minlength="6" required>
                 </div>
-                <div class="modal-actions">
+                <div id="passwordModalError" style="color:#e74c3c;font-size:13px;margin-top:10px;display:none;"></div>
+            <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="logout()">取消</button>
                     <button type="submit" class="btn btn-primary">确认修改</button>
                 </div>
@@ -250,7 +255,7 @@
 
         // 页面加载时检查是否已登录
         document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (token) {
                 // 验证token是否有效
                 fetch(`${API_BASE}/user/info`, {
@@ -264,12 +269,12 @@
                             redirectByRole(data.data.role);
                         }
                     } else {
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('token');
+                        sessionStorage.removeItem('user');
                     }
                 }).catch(() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
                 });
             }
         });
@@ -313,8 +318,8 @@
                 const data = await res.json();
 
                 if (data.code === 200) {
-                    localStorage.setItem('token', data.data.token);
-                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    sessionStorage.setItem('token', data.data.token);
+                    sessionStorage.setItem('user', JSON.stringify(data.data.user));
 
                     // 检查是否需要修改密码
                     if (data.data.user.must_change_password === 1) {
@@ -345,17 +350,16 @@
             e.preventDefault();
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const errEl = document.getElementById('passwordModalError');
 
             if (newPassword !== confirmPassword) {
-                showError('两次输入的密码不一致');
-                return;
+                errEl.textContent = '两次输入的密码不一致'; errEl.style.display = 'block'; return;
             }
             if (newPassword.length < 6) {
-                showError('密码长度不能少于6位');
-                return;
+                errEl.textContent = '密码长度不能少于6位'; errEl.style.display = 'block'; return;
             }
 
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             try {
                 const res = await fetch(`${API_BASE}/auth/password`, {
                     method: 'PUT',
@@ -368,7 +372,6 @@
                 const data = await res.json();
 
                 if (data.code === 200) {
-                    alert('密码修改成功！');
                     document.getElementById('passwordModal').classList.remove('show');
                     // 获取最新用户信息并跳转
                     const userRes = await fetch(`${API_BASE}/user/info`, {
@@ -376,14 +379,14 @@
                     });
                     const userData = await userRes.json();
                     if (userData.code === 200) {
-                        localStorage.setItem('user', JSON.stringify(userData.data));
+                        sessionStorage.setItem('user', JSON.stringify(userData.data));
                         redirectByRole(userData.data.role);
                     }
                 } else {
-                    showError(data.message);
+                    errEl.textContent = data.message || '修改失败'; errEl.style.display = 'block';
                 }
             } catch (err) {
-                showError('网络错误');
+                errEl.textContent = '网络错误'; errEl.style.display = 'block';
             }
         });
 
@@ -392,14 +395,14 @@
             if (role === 'ADMIN') {
                 window.location.href = 'admin.html';
             } else {
-                window.location.href = 'plan-list.html';
+                window.location.href = 'index.html';
             }
         }
 
         // 登出
         function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = 'login.html';
         }
     </script>

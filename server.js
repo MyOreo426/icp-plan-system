@@ -1,9 +1,10 @@
 /**
- * 内控计划共享编辑系统 - 后端服务入口
+ * 计划管理系统 - 后端服务入口
  * Node.js + Express + SQLite (sql.js)
  */
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const path = require('path');
 
@@ -37,14 +38,30 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // 暂时允许所有来源，记录日志
+      callback(new Error('CORS: 来源不在白名单')); // 拒绝未授权来源
       console.warn('CORS: 未在白名单的来源:', origin);
     }
   },
   credentials: true
 }));
-app.use(express.json()); // 解析JSON请求体
-app.use(express.urlencoded({ extended: true })); // 解析URL编码
+app.use(express.json({ limit: '1mb' })); // 解析JSON请求体，限制1MB
+app.use(express.urlencoded({ extended: true, limit: '1mb' })); // 解析URL编码，限制1MB
+
+// API速率限制
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1分钟
+  max: 60, // 每IP每分钟60次请求
+  message: { code: 429, message: '请求过于频繁，请稍后再试', data: null }
+});
+app.use('/api/', apiLimiter);
+
+// 登录接口更严格的限流：每IP每30秒5次
+const loginLimiter = rateLimit({
+  windowMs: 30 * 1000,
+  max: 5,
+  message: { code: 429, message: '登录尝试过于频繁，请30秒后再试', data: null }
+});
+app.use('/api/auth/login', loginLimiter);
 
 // 内容安全策略（CSP）- 允许内联脚本和事件处理
 app.use((req, res, next) => {
@@ -96,7 +113,7 @@ app.get('/api/health', (req, res) => {
 // API路由挂载
 app.use('/api/auth', authRoutes);           // 认证路由
 app.use('/api/user', authRoutes);           // 用户信息路由（兼容 /api/user/info）
-app.use('/api/plans', plansRoutes);         // 内控计划路由
+app.use('/api/plans', plansRoutes);         // 计划路由
 app.use('/api/users', usersRoutes);         // 用户管理路由
 app.use('/api/groups', groupsRoutes);       // 小组路由
 app.use('/api/notifications', notificationsRoutes); // 消息通知路由
@@ -132,14 +149,15 @@ async function startServer() {
     // 启动服务器
     app.listen(PORT, () => {
       console.log('========================================');
-      console.log('  内控计划共享编辑系统 - 后端服务');
+      console.log('  计划管理系统 - 后端服务');
       console.log('========================================');
       if (process.env.NODE_ENV !== 'production') {
         console.log('  测试账号:');
         console.log('  - 管理员: 工号 000000 / 密码 admin123');
-        console.log('  - 组长:   工号 100001 / 密码 leader123');
-        console.log('  - 组员:   工号 100002 / 密码 member123');
-        console.log('  - 主任:   工号 200001 / 密码 director123');
+        console.log('  - 综合计划组组长: 工号 MY / 密码 leader123');
+        console.log('  - 综合计划组组员: 工号 ZZY、WMY / 密码 member123');
+        console.log('  - 客户管理组组长: 工号 DH / 密码 leader123');
+        console.log('  - 客户管理组组员: 工号 A1、A2、A3 / 密码 member123');
       } else {
         console.log('  运行环境: production (测试账号已隐藏)');
       }

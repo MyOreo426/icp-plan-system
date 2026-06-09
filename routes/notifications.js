@@ -45,27 +45,7 @@ router.get('/', (req, res) => {
     LIMIT ? OFFSET ?
   `).all(...params, parseInt(pageSize), offset);
 
-  // 获取未读数量
-  const unreadCount = db.prepare(`
-    SELECT COUNT(*) as count
-    FROM sys_notification
-    WHERE user_id = ? AND is_read = 0
-  `).get(req.user.id);
-
-  return res.json({
-    code: 200,
-    message: 'success',
-    data: {
-      list: notifications,
-      unread_count: unreadCount.count,
-      pagination: {
-        total: countResult.total,
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
-        totalPages: Math.ceil(countResult.total / parseInt(pageSize))
-      }
-    }
-  });
+  return paginate(res, notifications, countResult.total, page, pageSize);
 });
 
 /**
@@ -130,6 +110,21 @@ router.put('/read-all', (req, res) => {
 });
 
 /**
+ * DELETE /api/notifications/clean-read
+ * 清理已读通知（必须在/:id之前注册，否则会被/:id参数拦截）
+ */
+router.delete('/clean-read', (req, res) => {
+  const db = getDb();
+
+  const result = db.prepare(`
+    DELETE FROM sys_notification
+    WHERE user_id = ? AND is_read = 1
+  `).run(req.user.id);
+
+  return success(res, { deleted: result.changes }, '已读通知清理成功');
+});
+
+/**
  * DELETE /api/notifications/:id
  * 删除通知
  */
@@ -150,21 +145,6 @@ router.delete('/:id', (req, res) => {
   db.prepare('DELETE FROM sys_notification WHERE id = ?').run(id);
 
   return success(res, null, '通知删除成功');
-});
-
-/**
- * DELETE /api/notifications/clean-read
- * 清理已读通知
- */
-router.delete('/clean-read', (req, res) => {
-  const db = getDb();
-
-  const result = db.prepare(`
-    DELETE FROM sys_notification
-    WHERE user_id = ? AND is_read = 1
-  `).run(req.user.id);
-
-  return success(res, { deleted: result.changes }, '已读通知清理成功');
 });
 
 module.exports = router;

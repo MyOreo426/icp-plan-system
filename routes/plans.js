@@ -1,5 +1,5 @@
 /**
- * 内控计划路由
+ * 计划路由
  * 处理计划的CRUD、锁定/解锁、状态流转等操作
  */
 
@@ -342,7 +342,6 @@ router.post('/', requireRole('MEMBER', 'LEADER', 'DIRECTOR', 'ADMIN'), (req, res
   
   // 如果查询不到（sql.js内存数据库状态问题），使用兜底查询获取最新记录
   if (!newPlan && result.lastInsertRowid) {
-    console.log('DEBUG: get()返回undefined，使用兜底查询获取新计划');
     newPlan = db.prepare('SELECT * FROM icp_plan ORDER BY id DESC LIMIT 1').get();
   }
 
@@ -408,8 +407,12 @@ router.put('/:id', (req, res) => {
     if (!newResponsible) {
       return error(res, 400, '责任人不存在');
     }
+    // 如果责任人变更到不同小组，需要同步更新group_id
     if (newResponsible.group_id !== oldPlan.group_id) {
-      return error(res, 400, '责任人必须属于同一小组');
+      if (!req.body.group_id) {
+        // 自动同步责任人的group_id
+        req.body.group_id = newResponsible.group_id;
+      }
     }
   }
 
@@ -419,7 +422,7 @@ router.put('/:id', (req, res) => {
   
   const allowedFields = [
     'seq_no', 'category', 'project', 'action_item', 'plan_source', 'deliverable',
-    'responsible_id', 'plan_issue_date', 'plan_deadline', 'current_progress', 'status', 'remark'
+    'responsible_id', 'group_id', 'plan_issue_date', 'plan_deadline', 'current_progress', 'status', 'remark'
   ];
 
   allowedFields.forEach(field => {

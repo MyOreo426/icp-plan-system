@@ -168,8 +168,8 @@ router.get('/info', authenticate, (req, res) => {
 router.put('/password', authenticate, (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
-  if (!oldPassword || !newPassword) {
-    return error(res, 400, '请提供旧密码和新密码');
+  if (!newPassword) {
+    return error(res, 400, '请提供新密码');
   }
 
   if (newPassword.length < 6) {
@@ -179,8 +179,15 @@ router.put('/password', authenticate, (req, res) => {
   const db = getDb();
   const user = db.prepare('SELECT * FROM sys_user WHERE id = ?').get(req.user.id);
 
-  if (!bcrypt.compareSync(oldPassword, user.password)) {
-    return error(res, 400, '旧密码不正确');
+  // 首次登录修改密码（must_change_password=1）时不需要验证旧密码
+  // 其他情况必须验证旧密码
+  if (!user.must_change_password) {
+    if (!oldPassword) {
+      return error(res, 400, '请提供旧密码');
+    }
+    if (!bcrypt.compareSync(oldPassword, user.password)) {
+      return error(res, 400, '旧密码不正确');
+    }
   }
 
   // 更新密码

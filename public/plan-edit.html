@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>计划编辑 - 内控计划共享编辑系统</title>
+    <title>计划编辑 - 计划管理系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -267,6 +267,48 @@
         .notification-text { font-size: 13px; color: #34495e; line-height: 1.5; }
         .notification-time { font-size: 11px; color: #95a5a6; margin-top: 4px; }
         .notification-empty { padding: 40px 20px; text-align: center; color: #95a5a6; font-size: 13px; }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
     </style>
 </head>
 <body>
@@ -275,7 +317,7 @@
             <div class="logo">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
             </div>
-            <span class="system-title">内控计划共享编辑系统</span>
+            <span class="system-title">计划管理系统</span>
             <div class="nav-divider"></div>
             <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -310,6 +352,7 @@
                 <span class="user-name" id="userName">加载中...</span>
                 <span class="user-role" id="userRole">--</span>
             </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
             <button class="logout-btn" onclick="logout()">退出</button>
         </div>
     </nav>
@@ -358,21 +401,37 @@
                             <input type="text" class="form-input" id="category" placeholder="合规检查" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">责任人<span style="color:red;">*</span></label>
+                            <label class="form-label">项目</label>
+                            <input type="text" class="form-input" id="project" placeholder="所属项目">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">行动项 <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="action_item" placeholder="具体的行动项描述" required>
+                        </div>
+                    </div>
+                    <div class="form-row cols-4">
+                        <div class="form-group">
+                            <label class="form-label">计划来源</label>
+                            <input type="text" class="form-input" id="plan_source" placeholder="年度计划">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">交付物</label>
+                            <input type="text" class="form-input" id="deliverable" placeholder="计划交付的成果物">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">责任人 <span class="required">*</span></label>
                             <select class="form-select" id="responsible_id" required>
                                 <option value="">-- 选择 --</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">计划来源</label>
-                            <input type="text" class="form-input" id="plan_source" placeholder="年度计划">
+                            <label class="form-label">所属组</label>
+                            <select class="form-select" id="group_id">
+                                <option value="">-- 自动跟随责任人 --</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row cols-4">
-                        <div class="form-group">
-                            <label class="form-label">项目名称</label>
-                            <input type="text" class="form-input" id="project" placeholder="所属项目">
-                        </div>
                         <div class="form-group">
                             <label class="form-label">下发日期</label>
                             <input type="date" class="form-input" id="plan_issue_date">
@@ -382,6 +441,10 @@
                             <input type="date" class="form-input" id="plan_deadline" required>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">当前进展</label>
+                            <input type="text" class="form-input" id="current_progress" placeholder="工作进展简述">
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">状态</label>
                             <select class="form-select" id="status">
                                 <option value="PENDING">待执行</option>
@@ -389,22 +452,6 @@
                                 <option value="CLOSED">已归零</option>
                                 <option value="CONTINUOUS">持续开展</option>
                             </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group full">
-                            <label class="form-label">行动项 <span class="required">*</span></label>
-                            <input type="text" class="form-input" id="action_item" placeholder="具体的行动项描述" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">交付物</label>
-                            <input type="text" class="form-input" id="deliverable" placeholder="计划交付的成果物">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">当前进展</label>
-                            <input type="text" class="form-input" id="current_progress" placeholder="工作进展简述">
                         </div>
                     </div>
                     <div class="form-row">
@@ -424,12 +471,13 @@
         let planId = null;
         let isEditMode = false;
         let groupMembers = [];
+        let allMembers = [];
         let originalStatus = 'PENDING';
 
         // 检查登录
         function checkAuth() {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
             if (!token || !userStr) {
                 window.location.href = 'login.html';
                 return null;
@@ -439,7 +487,7 @@
 
         // API请求
         async function apiRequest(url, options = {}) {
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const defaultOptions = {
                 headers: {
                     'Content-Type': 'application/json',
@@ -457,8 +505,8 @@
             const res = await fetch(url, mergedOptions);
             const data = await res.json();
             if (data.code === 401) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
                 window.location.href = 'login.html';
                 throw new Error('登录已过期');
             }
@@ -502,9 +550,17 @@
             } else {
                 document.getElementById('pageTitle').textContent = '新建计划';
                 await loadUserInfo();
+                await loadGroups();
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('formContainer').style.display = 'block';
             }
+
+            // 所属组变更时过滤责任人下拉
+            document.getElementById('group_id').addEventListener('change', function() {
+                renderResponsibles();
+            });
+            // 责任人变更时自动同步所属组
+            document.getElementById('responsible_id').addEventListener('change', updateGroupByResponsible);
         }
 
         function getRoleName(r) { return { ADMIN:'管理员', LEADER:'组长', MEMBER:'组员', DIRECTOR:'主任' }[r] || r; }
@@ -575,7 +631,7 @@
 
         async function markAllRead() {
             try {
-                await apiRequest(`${API_BASE}/notifications/mark-all-read`, { method: 'POST' });
+                await apiRequest(`${API_BASE}/notifications/read-all`, { method: 'PUT' });
                 document.getElementById('notifBadge').classList.add('hidden');
                 const panel = document.getElementById('notifPanel');
                 if (panel) {
@@ -589,34 +645,65 @@
         // 获取用户信息和组成员
         async function loadUserInfo() {
             try {
-                // 管理员或主任可以查看所有用户，其他角色只看组成员
-                if (['ADMIN', 'DIRECTOR'].includes(currentUser.role)) {
-                    const allUsersData = await apiRequest(`${API_BASE}/users`);
-                    if (allUsersData.code === 200) {
-                        groupMembers = allUsersData.data.list || allUsersData.data || [];
-                    }
-                } else {
-                    const data = await apiRequest(`${API_BASE}/user/info`);
-                    if (data.code === 200) {
-                        groupMembers = data.data.groupMembers || [];
-                    }
+                // 所有角色统一使用members接口获取所有组成员
+                const membersData = await apiRequest(`${API_BASE}/users/members`);
+                if (membersData.code === 200) {
+                    allMembers = membersData.data || [];
                 }
-                renderResponsibles();
+                groupMembers = allMembers;
             } catch (e) {
                 console.error(e);
             }
         }
 
-        // 渲染责任人下拉
+        // 根据所选组过滤并渲染责任人下拉
         function renderResponsibles() {
+            const groupId = document.getElementById('group_id').value;
             const select = document.getElementById('responsible_id');
+            const currentValue = select.value;
             select.innerHTML = '<option value="">-- 请选择责任人 --</option>';
-            groupMembers.forEach(m => {
+
+            // 如果选了组，只显示该组成员；否则显示全部
+            const members = groupId ? allMembers.filter(m => m.group_id == groupId) : allMembers;
+            members.forEach(m => {
                 select.innerHTML += `<option value="${m.id}">${m.real_name} (${m.username})</option>`;
             });
+
+            // 尝试恢复之前选中的值
+            if (currentValue && members.find(m => m.id == currentValue)) {
+                select.value = currentValue;
+            }
             // 新建模式下默认选中当前用户
-            if (!isEditMode && currentUser) {
+            if (!isEditMode && currentUser && members.find(m => m.id == currentUser.id)) {
                 select.value = currentUser.id;
+            }
+        }
+
+        // 加载小组列表
+        async function loadGroups() {
+            try {
+                const data = await apiRequest(`${API_BASE}/groups`);
+                if (data.code === 200) {
+                    const groups = data.data.list || data.data || [];
+                    const select = document.getElementById('group_id');
+                    select.innerHTML = '<option value="">-- 请选择所属组 --</option>';
+                    groups.forEach(g => {
+                        select.innerHTML += `<option value="${g.id}">${g.group_name}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error('加载小组列表失败', e);
+            }
+        }
+
+        // 根据责任人自动选择所属组（选择责任人后反向同步组）
+        function updateGroupByResponsible() {
+            const responsibleId = document.getElementById('responsible_id').value;
+            if (responsibleId) {
+                const member = allMembers.find(m => m.id == responsibleId);
+                if (member && member.group_id) {
+                    document.getElementById('group_id').value = member.group_id;
+                }
             }
         }
 
@@ -643,8 +730,9 @@
                 const plan = data.data;
                 originalStatus = plan.status;
 
-                // 获取组成员
+                // 获取组成员和小组列表
                 await loadUserInfo();
+                await loadGroups();
 
                 // 填充表单
                 document.getElementById('seq_no').value = plan.seq_no || '';
@@ -653,6 +741,9 @@
                 document.getElementById('plan_source').value = plan.plan_source || '';
                 document.getElementById('action_item').value = plan.action_item || '';
                 document.getElementById('deliverable').value = plan.deliverable || '';
+                document.getElementById('group_id').value = plan.group_id || '';
+                // 先按组过滤责任人列表，再设置责任人值
+                renderResponsibles();
                 document.getElementById('responsible_id').value = plan.responsible_id || '';
                 document.getElementById('plan_issue_date').value = plan.plan_issue_date || '';
                 document.getElementById('plan_deadline').value = plan.plan_deadline || '';
@@ -740,6 +831,7 @@
                 action_item,
                 deliverable: document.getElementById('deliverable').value,
                 responsible_id: document.getElementById('responsible_id').value ? parseInt(document.getElementById('responsible_id').value) : null,
+                group_id: document.getElementById('group_id').value ? parseInt(document.getElementById('group_id').value) : null,
                 plan_issue_date: document.getElementById('plan_issue_date').value || null,
                 plan_deadline,
                 current_progress: document.getElementById('current_progress').value,
@@ -783,6 +875,20 @@
             btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg> 保存';
         }
 
+        // 退出登录
+        function logout() {
+            const token = sessionStorage.getItem('token');
+            if (token) {
+                fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).catch(() => {});
+            }
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
         // 返回
         async function goBack() {
             if (isEditMode && planId) {
@@ -796,7 +902,7 @@
         // 页面卸载时解锁
         window.addEventListener('beforeunload', async function() {
             if (isEditMode && planId) {
-                const token = localStorage.getItem('token');
+                const token = sessionStorage.getItem('token');
                 if (token) {
                     try {
                         await fetch(`${API_BASE}/plans/unlock/${planId}`, {
@@ -819,5 +925,24 @@
 
         init();
     </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
