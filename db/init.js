@@ -10,7 +10,20 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 // 数据库文件路径
-const DB_PATH = path.join(__dirname, '..', 'data', 'icp.db');
+// pkg打包时，数据库放在exe同级目录的data文件夹下，保证可写
+let DB_PATH;
+if (typeof process.pkg !== 'undefined') {
+  // pkg打包环境，数据库放到exe所在目录
+  const exeDir = path.dirname(process.execPath);
+  const dataDir = path.join(exeDir, 'data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  DB_PATH = path.join(dataDir, 'icp.db');
+} else {
+  // 普通Node环境，用原路径
+  DB_PATH = path.join(__dirname, '..', 'data', 'icp.db');
+}
 
 let dbInstance = null;           // sql.js Database 实例
 let wrapperInstance = null;     // 包装后的数据库实例
@@ -179,7 +192,14 @@ async function initDatabase() {
     console.log('正在初始化 sql.js...');
 
     // 初始化 sql.js
-    const SQL = await initSqlJs();
+    // pkg打包时wasm在虚拟文件系统中，需要指定路径
+    let sqlJsConfig = {};
+    if (typeof process.pkg !== 'undefined') {
+      // pkg环境：wasm打包在node_modules/sql.js/dist/下
+      const wasmPath = path.join(__dirname, '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+      sqlJsConfig.locateFile = () => wasmPath;
+    }
+    const SQL = await initSqlJs(sqlJsConfig);
 
     // 尝试从文件加载数据库
     let database;

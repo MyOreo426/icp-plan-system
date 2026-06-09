@@ -315,11 +315,11 @@
             </a>
             <a href="plan-list.html" class="nav-btn" id="planListNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-                计划列表
+                重点任务列表
             </a>
             <a href="plan-list-excel.html" class="nav-btn" id="planExcelNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
-                计划列表（表格版）
+                重点任务列表（表格版）
             </a>
             <a href="import-export.html" class="nav-btn" id="importExportNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
@@ -363,7 +363,7 @@
                 <div class="stat-icon green">🔄</div>
                 <div class="stat-info">
                     <div class="stat-value" id="inProgressPlans">0</div>
-                    <div class="stat-label">进行中</div>
+                    <div class="stat-label">执行中</div>
                     <div class="stat-change neutral" id="progressChange">--</div>
                 </div>
             </div>
@@ -422,8 +422,8 @@
 
     <script>
         const API_BASE = '/api';
-        const STATUS_MAP = { PENDING: '待办', IN_PROGRESS: '进行中', CLOSED: '已关闭', CONTINUOUS: '持续' };
-        const STATUS_COLORS = { PENDING: '#667eea', IN_PROGRESS: '#10b981', CLOSED: '#94a3b8', CONTINUOUS: '#f59e0b' };
+        const STATUS_MAP = { PENDING: '待执行', IN_PROGRESS: '执行中', CLOSED: '已归零', CONTINUOUS: '持续开展' };
+        const STATUS_COLORS = { PENDING: '#94a3b8', IN_PROGRESS: '#3b82f6', CLOSED: '#10b981', CONTINUOUS: '#8b5cf6' };
         const ROLE_MAP = { ADMIN: '管理员', LEADER: '组长', MEMBER: '组员', DIRECTOR: '主任' };
         const ROLE_EMOJI = { ADMIN: '⚙️', LEADER: '👥', MEMBER: '👤', DIRECTOR: '🏢' };
 
@@ -653,7 +653,7 @@
             // 双击跳转：按状态筛选
             chartInstances.status.on('dblclick', function(params) {
                 if (params.data && params.data.name) {
-                    const statusMap = {'待办': 'PENDING', '进行中': 'IN_PROGRESS', '已关闭': 'CLOSED', '持续': 'CONTINUOUS'};
+                    const statusMap = {'待执行': 'PENDING', '执行中': 'IN_PROGRESS', '已归零': 'CLOSED', '持续开展': 'CONTINUOUS'};
                     const status = statusMap[params.data.name];
                     if (status) window.location.href = 'plan-list.html?status=' + status;
                 }
@@ -769,7 +769,7 @@
             // 双击跳转：按小组+状态筛选
             chartInstances.groupStatus.on('dblclick', function(params) {
                 if (params.seriesName) {
-                    const statusMap = {'待办': 'PENDING', '进行中': 'IN_PROGRESS', '已关闭': 'CLOSED', '持续': 'CONTINUOUS'};
+                    const statusMap = {'待执行': 'PENDING', '执行中': 'IN_PROGRESS', '已归零': 'CLOSED', '持续开展': 'CONTINUOUS'};
                     const status = statusMap[params.seriesName];
                     if (status) window.location.href = 'plan-list.html?status=' + status;
                 }
@@ -902,7 +902,7 @@
                 // 主任/组长：显示操作日志
                 document.getElementById('logNavBtn').style.display = 'flex';
             }
-            // MEMBER：默认显示计划列表、表格版和导入导出，无需额外操作
+            // MEMBER：默认显示重点任务列表、表格版和导入导出，无需额外操作
             // 仪表盘对所有角色可见，已在HTML中设置，无需隐藏
 
             // Bind events - 使用addEventListener（CSP兼容）

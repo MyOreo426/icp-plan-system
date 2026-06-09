@@ -61,7 +61,14 @@ app.get('/', (req, res) => {
 });
 
 // 静态文件托管（前端页面）
-app.use(express.static('public'));
+// 使用绝对路径，兼容pkg打包环境
+const publicPath = path.join(__dirname, 'public');
+console.log('静态文件路径:', publicPath);
+console.log('路径是否存在:', require('fs').existsSync(publicPath));
+if (require('fs').existsSync(publicPath)) {
+  console.log('目录内容:', require('fs').readdirSync(publicPath));
+}
+app.use(express.static(publicPath));
 
 // 请求日志中间件
 app.use((req, res, next) => {
