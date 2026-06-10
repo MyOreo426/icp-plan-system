@@ -96,7 +96,7 @@ function validateStatusTransition(currentStatus, newStatus) {
     'CONTINUOUS': [] // 终态，不可流转
   };
   
-  return validTransitions[currentStatus]?.includes(newStatus) || false;
+  return (validTransitions[currentStatus] && validTransitions[currentStatus].includes(newStatus)) || false;
 }
 
 /**
@@ -287,7 +287,7 @@ router.post('/', requireRole('MEMBER', 'LEADER', 'DIRECTOR', 'ADMIN'), (req, res
   let finalSeqNo = seq_no;
   if (!finalSeqNo) {
     const maxResult = db.prepare('SELECT MAX(seq_no) as max_no FROM icp_plan').get();
-    finalSeqNo = (maxResult?.max_no || 0) + 1;
+    finalSeqNo = ((maxResult && maxResult.max_no) || 0) + 1;
   }
 
   // 参数验证
@@ -329,9 +329,9 @@ router.post('/', requireRole('MEMBER', 'LEADER', 'DIRECTOR', 'ADMIN'), (req, res
       is_overdue, status, remark, creator_id, group_id
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    finalSeqNo, category, project ?? null, action_item, plan_source ?? null, deliverable ?? null,
-    responsible_id ?? null, plan_issue_date ?? null, plan_deadline, current_progress ?? null,
-    is_overdue, status || 'PENDING', remark ?? null, req.user.id, groupId
+    finalSeqNo, category, project || null, action_item, plan_source || null, deliverable || null,
+    responsible_id || null, plan_issue_date || null, plan_deadline, current_progress || null,
+    is_overdue, status || 'PENDING', remark || null, req.user.id, groupId
   );
 
   // 记录日志
@@ -523,7 +523,7 @@ router.post('/import', requireRole('MEMBER', 'LEADER', 'DIRECTOR', 'ADMIN'), (re
 
   // 获取当前最大序号
   const maxResult = db.prepare('SELECT MAX(seq_no) as max_no FROM icp_plan').get();
-  let nextSeqNo = (maxResult?.max_no || 0) + 1;
+  let nextSeqNo = ((maxResult && maxResult.max_no) || 0) + 1;
 
   plans.forEach((item, index) => {
     try {
@@ -773,7 +773,7 @@ router.post('/manual-unlock/:id', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (r
   }
 
   const updatedPlan = db.prepare('SELECT * FROM icp_plan WHERE id = ?').get(id);
-  return success(res, updatedPlan, `已强制解锁，计划原被${locker?.real_name || '未知用户'}锁定`);
+  return success(res, updatedPlan, `已强制解锁，计划原被${(locker && locker.real_name) || '未知用户'}锁定`);
 });
 
 module.exports = router;
