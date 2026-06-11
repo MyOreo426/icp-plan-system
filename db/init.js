@@ -392,6 +392,14 @@ function insertSeedData(db) {
   db.prepare('UPDATE sys_group SET leader_id = ? WHERE id = ?').run(leader1.lastInsertRowid, group1.lastInsertRowid);
   console.log('✓ 创建综合计划组组长: 工号MY, 密码leader123');
 
+  // 3.5 创建主任（跨组）
+  const directorPassword = bcrypt.hashSync('director123', 10);
+  const director = db.prepare(`
+    INSERT INTO sys_user (username, password, real_name, email, role, group_id, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run('ZR', directorPassword, '主任', 'zr@example.com', 'DIRECTOR', group1.lastInsertRowid, 1);
+  console.log('✓ 创建主任: 工号ZR, 密码director123');
+
   // 4. 创建综合计划组组员 ZZY、WMY
   const memberPassword = bcrypt.hashSync('member123', 10);
   const member1a = db.prepare(`
