@@ -35,3 +35,5 @@ dist/
 build/
 *.min.js
 *.min.css
+!public/*.min.js
+!public/*.min.css
