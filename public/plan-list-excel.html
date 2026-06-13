@@ -555,6 +555,10 @@
                 <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 仪表盘
             </a>
+            <a href="business-plan-list.html" class="nav-btn" id="businessPlanNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                经营计划
+            </a>
             <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 用户管理
@@ -570,10 +574,6 @@
             <a href="plan-list-excel.html" class="nav-btn active" id="planExcelNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
                 重点任务列表（表格版）
-            </a>
-            <a href="import-export.html" class="nav-btn" id="importExportNavBtn">
-                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
-                导入导出
             </a>
             <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -639,10 +639,22 @@
                     重置
                 </button>
             </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="triggerImport()">
+                    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    批量导入
+                </button>
+                <button class="toolbar-btn" onclick="exportPlans()">
+                    <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                    批量导出
+                </button>
+            </div>
         </div>
 
         <!-- Excel表格区域 -->
         <div class="excel-container">
+            <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleImportFile(event)">
             <div class="excel-wrapper" id="excelWrapper">
                 <table class="excel-table" id="excelTable">
                     <thead>
@@ -887,6 +899,150 @@
             });
         }
 
+        // 触发导入文件选择
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        // 处理导入文件
+        async function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = '';
+
+            try {
+                if (typeof XLSX === 'undefined') {
+                    await loadScript('xlsx.full.min.js');
+                }
+                const data = await readFileAsync(file);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                if (jsonData.length === 0) {
+                    alert('文件中没有数据');
+                    return;
+                }
+
+                const confirmMsg = `读取到 ${jsonData.length} 条数据，是否确认导入？\n\n前3条预览：\n` + 
+                    jsonData.slice(0, 3).map((r, i) => `${i+1}. ${r['类别'] || r.category || ''} - ${r['行动项'] || r.action_item || ''}`).join('\n');
+                
+                if (!confirm(confirmMsg)) return;
+
+                const res = await apiRequest(`${API_BASE}/plans/import`, {
+                    method: 'POST',
+                    body: JSON.stringify({ plans: jsonData })
+                });
+
+                if (res.code === 200) {
+                    const result = res.data;
+                    let msg = `导入完成！成功 ${result.success} 条`;
+                    if (result.failed > 0) {
+                        msg += `，失败 ${result.failed} 条`;
+                        if (result.errors && result.errors.length > 0) {
+                            msg += '\n\n失败详情：\n' + result.errors.slice(0, 5).join('\n');
+                        }
+                    }
+                    alert(msg);
+                    loadPlans(1);
+                } else {
+                    alert('导入失败：' + (res.message || '未知错误'));
+                }
+            } catch (err) {
+                alert('文件读取失败：' + err.message);
+            }
+        }
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('无法加载Excel解析库'));
+                document.head.appendChild(script);
+            });
+        }
+
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(new Uint8Array(e.target.result));
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 导出数据
+        async function exportPlans() {
+            try {
+                // 重新拉取全部数据（确保完整），再按当前筛选条件过滤
+                const searchName = document.getElementById('searchName').value;
+                const status = document.getElementById('filterStatus').value;
+                const isOverdue = document.getElementById('filterOverdue').value;
+
+                let url = `${API_BASE}/plans?page=1&pageSize=10000`;
+                if (searchName) url += `&action_item=${encodeURIComponent(searchName)}`;
+                if (status) url += `&status=${status}`;
+                if (isOverdue) url += `&is_overdue=${isOverdue}`;
+
+                const res = await apiRequest(url);
+                if (res.code !== 200) {
+                    alert('导出失败：' + res.message);
+                    return;
+                }
+
+                let plans = (res.data && res.data.list) || [];
+                if (plans.length === 0) {
+                    alert('暂无数据可导出');
+                    return;
+                }
+
+                // 按表格版排序规则排序（与页面显示一致）
+                plans = sortPlans(plans);
+
+                // 生成CSV
+                const headers = ['序号', '类别', '项目', '行动项', '计划来源', '交付物', '责任人', '截止日期', '状态', '当前进展', '备注'];
+                let csv = headers.join(',') + '\n';
+
+                plans.forEach((p, index) => {
+                    const row = [
+                        index + 1,  // 序号：排序后的连续编号
+                        p.category || '',
+                        p.project || '',
+                        p.action_item || '',
+                        p.plan_source || '',
+                        p.deliverable || '',
+                        p.responsible_name || '',
+                        p.plan_deadline || '',
+                        getStatusName(p.status),
+                        (p.current_progress || '').replace(/\n/g, ' '),
+                        (p.remark || '').replace(/\n/g, ' ')
+                    ];
+                    csv += row.map(cell => {
+                        cell = String(cell);
+                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                            return '"' + cell.replace(/"/g, '""') + '"';
+                        }
+                        return cell;
+                    }).join(',') + '\n';
+                });
+
+                const BOM = '\uFEFF';
+                const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `重点任务_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                alert(`导出成功！共 ${plans.length} 条记录`);
+            } catch (e) {
+                alert('导出失败：' + e.message);
+            }
+        }
+
         // 初始化
         async function init() {
             currentUser = checkAuth();
@@ -904,7 +1060,6 @@
                 document.getElementById('dashboardNavBtn').style.display = 'none';
                 document.getElementById('planListNavBtn').style.display = 'none';
                 document.getElementById('planExcelNavBtn').style.display = 'none';
-                document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';
                 document.getElementById('groupNavBtn').style.display = 'flex';
@@ -979,7 +1134,7 @@
         async function loadNotificationCount() {
             try {
                 const data = await apiRequest(`${API_BASE}/notifications/unread-count`);
-                const count = data.data?.count || 0;
+                const count = (data.data && data.data.count) || 0;
                 const badge = document.getElementById('notifBadge');
                 if (count > 0) {
                     badge.textContent = count > 99 ? '99+' : count;
@@ -1007,7 +1162,7 @@
 
             try {
                 const data = await apiRequest(url);
-                allPlans = sortPlans(data.data?.list || []);
+                allPlans = sortPlans((data.data && data.data.list) || []);
                 filteredPlans = [...allPlans];
                 
                 // 构建类别颜色映射
@@ -1523,18 +1678,18 @@
             if (!row) return;
 
             // 收集数据
-            const category = row.querySelector('[name="edit_category"]')?.value?.trim() || '';
-            const project = row.querySelector('[name="edit_project"]')?.value?.trim() || '';
-            const action_item = row.querySelector('[name="edit_action_item"]')?.value?.trim() || '';
-            const plan_source = row.querySelector('[name="edit_plan_source"]')?.value?.trim() || '';
-            const deliverable = row.querySelector('[name="edit_deliverable"]')?.value?.trim() || '';
-            const group_id = row.querySelector('[name="edit_group_id"]')?.value || '';
-            const responsible_id = row.querySelector('[name="edit_responsible_id"]')?.value || (currentUser.role === 'MEMBER' ? currentUser.id : '');
-            const plan_issue_date = row.querySelector('[name="edit_plan_issue_date"]')?.value || '';
-            const plan_deadline = row.querySelector('[name="edit_plan_deadline"]')?.value || '';
-            const current_progress = row.querySelector('[name="edit_current_progress"]')?.value?.trim() || '';
-            const status = row.querySelector('[name="edit_status"]')?.value || 'PENDING';
-            const remark = row.querySelector('[name="edit_remark"]')?.value?.trim() || '';
+            const category = (row.querySelector('[name="edit_category"]') && row.querySelector('[name="edit_category"]').value && row.querySelector('[name="edit_category"]').value.trim()) || '';
+            const project = (row.querySelector('[name="edit_project"]') && row.querySelector('[name="edit_project"]').value && row.querySelector('[name="edit_project"]').value.trim()) || '';
+            const action_item = (row.querySelector('[name="edit_action_item"]') && row.querySelector('[name="edit_action_item"]').value && row.querySelector('[name="edit_action_item"]').value.trim()) || '';
+            const plan_source = (row.querySelector('[name="edit_plan_source"]') && row.querySelector('[name="edit_plan_source"]').value && row.querySelector('[name="edit_plan_source"]').value.trim()) || '';
+            const deliverable = (row.querySelector('[name="edit_deliverable"]') && row.querySelector('[name="edit_deliverable"]').value && row.querySelector('[name="edit_deliverable"]').value.trim()) || '';
+            const group_id = (row.querySelector('[name="edit_group_id"]') && row.querySelector('[name="edit_group_id"]').value) || '';
+            const responsible_id = (row.querySelector('[name="edit_responsible_id"]') && row.querySelector('[name="edit_responsible_id"]').value) || (currentUser.role === 'MEMBER' ? currentUser.id : '');
+            const plan_issue_date = (row.querySelector('[name="edit_plan_issue_date"]') && row.querySelector('[name="edit_plan_issue_date"]').value) || '';
+            const plan_deadline = (row.querySelector('[name="edit_plan_deadline"]') && row.querySelector('[name="edit_plan_deadline"]').value) || '';
+            const current_progress = (row.querySelector('[name="edit_current_progress"]') && row.querySelector('[name="edit_current_progress"]').value && row.querySelector('[name="edit_current_progress"]').value.trim()) || '';
+            const status = (row.querySelector('[name="edit_status"]') && row.querySelector('[name="edit_status"]').value) || 'PENDING';
+            const remark = (row.querySelector('[name="edit_remark"]') && row.querySelector('[name="edit_remark"]').value && row.querySelector('[name="edit_remark"]').value.trim()) || '';
 
             // 验证
             let hasError = false;
@@ -1700,7 +1855,7 @@
             const newPlan = {
                 id: 'new_' + Date.now(),
                 _isNew: true,
-                category: filteredPlans[contextRowIndex]?.category || '',
+                category: (filteredPlans[contextRowIndex] && filteredPlans[contextRowIndex].category) || '',
                 project: '',
                 action_item: '',
                 plan_source: '',
@@ -1737,7 +1892,7 @@
             const newPlan = {
                 id: 'new_' + Date.now(),
                 _isNew: true,
-                category: filteredPlans[contextRowIndex]?.category || '',
+                category: (filteredPlans[contextRowIndex] && filteredPlans[contextRowIndex].category) || '',
                 project: '',
                 action_item: '',
                 plan_source: '',
@@ -1803,7 +1958,7 @@
         async function loadNotifications() {
             try {
                 const data = await apiRequest(`${API_BASE}/notifications`);
-                const list = data.data?.list || [];
+                const list = (data.data && data.data.list) || [];
                 const notifList = document.getElementById('notifList');
                 if (list.length === 0) {
                     notifList.innerHTML = '<div class="notification-empty">暂无通知</div>';

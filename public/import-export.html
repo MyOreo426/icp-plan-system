@@ -525,7 +525,7 @@
                     return;
                 }
 
-                const plans = res.data?.list || [];
+                const plans = (res.data && res.data.list) || [];
                 if (plans.length === 0) {
                     alert('暂无数据可导出');
                     btn.disabled = false;
@@ -594,7 +594,7 @@
             try {
                 // 动态加载SheetJS
                 if (typeof XLSX === 'undefined') {
-                    await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+                    await loadScript('xlsx.full.min.js');
                 }
 
                 // 读取文件
@@ -735,8 +735,8 @@
             try {
                 const data = await apiRequest(`${API_BASE}/notifications?page=1&pageSize=10`);
                 if (data.code === 200) {
-                    renderNotifications(data.data?.list || []);
-                    if (data.data?.total > 0) {
+                    renderNotifications((data.data && data.data.list) || []);
+                    if ((data.data && data.data.total) > 0) {
                         document.getElementById('notifBadge').textContent = data.data.total > 99 ? '99+' : data.data.total;
                         document.getElementById('notifBadge').classList.remove('hidden');
                     }
@@ -796,7 +796,6 @@
                 // 管理员：只显示用户管理、小组管理、操作日志
                 document.getElementById('dashboardNavBtn').style.display = 'none';
                 document.getElementById('planListNavBtn').style.display = 'none';
-                document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('planExcelNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';

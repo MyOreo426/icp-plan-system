@@ -196,6 +196,12 @@
         }
         .filter-select:focus { border-color: #667eea; }
         .filter-actions { display: flex; gap: 8px; }
+        .filter-divider {
+            width: 1px;
+            background: #e0e6ed;
+            margin: 0 8px;
+            align-self: stretch;
+        }
 
         /* 数据表格 - 支持水平滚动 */
         .data-table {
@@ -543,6 +549,10 @@
                 <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 仪表盘
             </a>
+            <a href="business-plan-list.html" class="nav-btn" id="businessPlanNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                经营计划
+            </a>
             <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 用户管理
@@ -558,10 +568,6 @@
             <a href="plan-list-excel.html" class="nav-btn" id="planExcelNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
                 重点任务列表（表格版）
-            </a>
-            <a href="import-export.html" class="nav-btn" id="importExportNavBtn">
-                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
-                导入导出
             </a>
             <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -598,6 +604,13 @@
         <main class="content">
             <!-- 筛选区 -->
             <div class="filter-bar" id="filterBar">
+                <div class="filter-actions">
+                    <button class="btn btn-primary" onclick="addNewRow()">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        新建计划
+                    </button>
+                </div>
+                <div class="filter-divider"></div>
                 <div class="filter-group">
                     <span class="filter-label">行动项名称</span>
                     <input type="text" class="filter-input" id="searchName" placeholder="搜索行动项..." style="width:180px;">
@@ -635,13 +648,23 @@
                 <div class="filter-actions">
                     <button class="btn btn-primary" onclick="loadPlans(1)">查询</button>
                     <button class="btn btn-outline" onclick="resetFilters()">重置</button>
-                    <button class="btn btn-primary" id="newPlanBtn" onclick="addNewRow()">新建计划</button>
+                </div>
+                <div class="filter-divider"></div>
+                <div class="filter-actions">
+                    <button class="btn btn-outline" onclick="triggerImport()">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        批量导入
+                    </button>
+                    <button class="btn btn-outline" onclick="exportPlans()">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                        批量导出
+                    </button>
                 </div>
             </div>
 
-
             <!-- 数据表格 -->
             <div class="data-table" id="dataTable">
+                <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleImportFile(event)">
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -797,6 +820,161 @@
             });
         }
 
+        // 触发导入文件选择
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        // 处理导入文件选择
+        async function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 重置input，允许重复选择同一文件
+            event.target.value = '';
+
+            try {
+                // 动态加载XLSX库
+                if (typeof XLSX === 'undefined') {
+                    await loadScript('xlsx.full.min.js');
+                }
+
+                // 读取文件
+                const data = await readFileAsync(file);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                if (jsonData.length === 0) {
+                    alert('文件中没有数据');
+                    return;
+                }
+
+                // 确认导入
+                const confirmMsg = `读取到 ${jsonData.length} 条数据，是否确认导入？\n\n前3条预览：\n` + 
+                    jsonData.slice(0, 3).map((r, i) => `${i+1}. ${r['类别'] || r.category || ''} - ${r['行动项'] || r.action_item || ''}`).join('\n');
+                
+                if (!confirm(confirmMsg)) return;
+
+                // 执行导入
+                const res = await apiRequest(`${API_BASE}/plans/import`, {
+                    method: 'POST',
+                    body: JSON.stringify({ plans: jsonData })
+                });
+
+                if (res.code === 200) {
+                    const result = res.data;
+                    let msg = `导入完成！成功 ${result.success} 条`;
+                    if (result.failed > 0) {
+                        msg += `，失败 ${result.failed} 条`;
+                        if (result.errors && result.errors.length > 0) {
+                            msg += '\n\n失败详情：\n' + result.errors.slice(0, 5).join('\n');
+                        }
+                    }
+                    alert(msg);
+                    loadPlans(currentPage);
+                } else {
+                    alert('导入失败：' + (res.message || '未知错误'));
+                }
+            } catch (err) {
+                alert('文件读取失败：' + err.message);
+            }
+        }
+
+        // 动态加载脚本
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('无法加载Excel解析库'));
+                document.head.appendChild(script);
+            });
+        }
+
+        // 异步读取文件
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(new Uint8Array(e.target.result));
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 导出数据
+        async function exportPlans() {
+            try {
+                // 获取当前筛选条件
+                const searchName = document.getElementById('searchName').value;
+                const status = document.getElementById('filterStatus').value;
+                const isOverdue = document.getElementById('filterOverdue').value;
+                const category = document.getElementById('filterCategory').value;
+
+                let url = `${API_BASE}/plans?page=1&pageSize=10000`;
+                if (searchName) url += `&action_item=${encodeURIComponent(searchName)}`;
+                if (status) url += `&status=${status}`;
+                if (isOverdue) url += `&is_overdue=${isOverdue}`;
+                if (category) url += `&category=${encodeURIComponent(category)}`;
+
+                const res = await apiRequest(url);
+                if (res.code !== 200) {
+                    alert('导出失败：' + res.message);
+                    return;
+                }
+
+                let plans = (res.data && res.data.list) || [];
+                if (plans.length === 0) {
+                    alert('暂无数据可导出');
+                    return;
+                }
+
+                // 按前端显示的排序规则排序（与列表显示一致）
+                plans = sortPlans(plans);
+
+                // 生成CSV
+                const headers = ['序号', '类别', '项目', '行动项', '计划来源', '交付物', '责任人', '截止日期', '状态', '当前进展'];
+                let csv = headers.join(',') + '\n';
+
+                plans.forEach((p, index) => {
+                    const row = [
+                        index + 1,  // 序号：排序后的连续编号
+                        p.category || '',
+                        p.project || '',
+                        p.action_item || '',
+                        p.plan_source || '',
+                        p.deliverable || '',
+                        p.responsible_name || '',
+                        p.plan_deadline || '',
+                        getStatusName(p.status),
+                        (p.current_progress || '').replace(/\n/g, ' ')
+                    ];
+                    csv += row.map(cell => {
+                        cell = String(cell);
+                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                            return '"' + cell.replace(/"/g, '""') + '"';
+                        }
+                        return cell;
+                    }).join(',') + '\n';
+                });
+
+                // 下载
+                const BOM = '\uFEFF';
+                const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `重点任务_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                alert(`导出成功！共 ${plans.length} 条记录`);
+            } catch (e) {
+                alert('导出失败：' + e.message);
+            }
+        }
+
         // 初始化
         async function init() {
             currentUser = checkAuth();
@@ -814,7 +992,6 @@
                 // 管理员：只显示用户管理、小组管理、操作日志
                 document.getElementById('dashboardNavBtn').style.display = 'none';
                 document.getElementById('planListNavBtn').style.display = 'none';
-                document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('planExcelNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';
@@ -885,7 +1062,7 @@
         // 生成责任人下拉HTML
         function getResponsibleSelectHtml(selectedId) {
             // 组员新增时，责任人固定为本人，不可修改
-            if (currentUser?.role === 'MEMBER') {
+            if ((currentUser && currentUser.role) === 'MEMBER') {
                 const me = groupMembers.find(m => m.id == currentUser.id);
                 const name = me ? me.real_name : currentUser.real_name || currentUser.username;
                 return `<input type="hidden" name="responsible_id" value="${currentUser.id}"><span style="font-size:13px;">${name}</span>`;
@@ -904,7 +1081,7 @@
         async function loadNotificationCount() {
             try {
                 const data = await apiRequest(`${API_BASE}/notifications/unread-count`);
-                const count = data.data?.count || 0;
+                const count = (data.data && data.data.count) || 0;
                 const badge = document.getElementById('notifBadge');
                 if (count > 0) {
                     badge.textContent = count > 99 ? '99+' : count;
@@ -939,9 +1116,9 @@
 
             try {
                 const data = await apiRequest(url);
-                const list = sortPlans(data.data?.list || []);
+                const list = sortPlans((data.data && data.data.list) || []);
                 renderTable(list);
-                renderPagination(data.data?.pagination);
+                renderPagination((data.data && data.data.pagination));
             } catch (e) {
                 document.getElementById('tableBody').innerHTML = `<tr><td colspan="14" class="empty-state">加载失败: ${e.message}</td></tr>`;
             }
@@ -984,7 +1161,7 @@
                     <input type="text" class="inline-input" name="deliverable" placeholder="">
                 </td>
                 <td class="col-responsible">
-                    ${getResponsibleSelectHtml(currentUser?.id)}
+                    ${getResponsibleSelectHtml((currentUser && currentUser.id))}
                 </td>
                 <td class="col-group">
                     <span style="color:#999;font-size:12px;">自动</span>
@@ -1121,7 +1298,7 @@
             const tbody = document.getElementById('tableBody');
             
             // 如果正在添加新行，先保存新行
-            const newRowHtml = isAddingNew ? document.getElementById('newPlanRow')?.outerHTML : null;
+            const newRowHtml = isAddingNew ? (document.getElementById('newPlanRow') && document.getElementById('newPlanRow').outerHTML) : null;
             
             if (!plans || plans.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="14" class="empty-state">
@@ -1264,7 +1441,7 @@
         async function loadNotifications() {
             try {
                 const data = await apiRequest(`${API_BASE}/notifications`);
-                const list = data.data?.list || [];
+                const list = (data.data && data.data.list) || [];
                 const notifList = document.getElementById('notifList');
                 if (list.length === 0) {
                     notifList.innerHTML = '<div class="notification-empty">暂无通知</div>';

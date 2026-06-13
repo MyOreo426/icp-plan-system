@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>仪表盘 - 计划管理系统</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -347,6 +347,10 @@
                 <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                 仪表盘
             </a>
+            <a href="business-plan-list.html" class="nav-btn" id="businessPlanNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                经营计划
+            </a>
             <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 用户管理
@@ -362,10 +366,6 @@
             <a href="plan-list-excel.html" class="nav-btn" id="planExcelNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
                 重点任务列表（表格版）
-            </a>
-            <a href="import-export.html" class="nav-btn" id="importExportNavBtn">
-                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
-                导入导出
             </a>
             <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -457,6 +457,22 @@
             <div class="chart-card">
                 <div class="chart-title">即将到期预警</div>
                 <div class="warning-list" id="warningList"></div>
+            </div>
+        </div>
+
+        <!-- Chart Section Row 3 - 经营计划 -->
+        <div class="chart-container" style="margin-top: 20px;">
+            <div class="chart-card">
+                <div class="chart-title">经营计划总体完成情况</div>
+                <div class="chart-wrapper" id="chartBizCompletion"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">经营计划分部情况</div>
+                <div class="chart-wrapper" id="chartBizDept"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">经营计划类型分布</div>
+                <div class="chart-wrapper" id="chartBizType"></div>
             </div>
         </div>
 
@@ -657,6 +673,9 @@
             chartInstances.category = echarts.init(document.getElementById('chartCategory'));
             chartInstances.groupStatus = echarts.init(document.getElementById('chartGroupStatus'));
             chartInstances.trend = echarts.init(document.getElementById('chartTrend'));
+            chartInstances.bizCompletion = echarts.init(document.getElementById('chartBizCompletion'));
+            chartInstances.bizDept = echarts.init(document.getElementById('chartBizDept'));
+            chartInstances.bizType = echarts.init(document.getElementById('chartBizType'));
         }
 
         // Render status pie chart
@@ -877,6 +896,269 @@
             });
         }
 
+        // 获取经营计划数据
+        async function fetchBusinessPlans() {
+            try {
+                const res = await fetch(`${API_BASE}/business-plans/all`, { headers: getHeaders() });
+                const data = await res.json();
+                if (data.code === 200) {
+                    return data.data || [];
+                }
+                return [];
+            } catch (e) {
+                console.error('获取经营计划数据失败', e);
+                return [];
+            }
+        }
+
+        // 渲染经营计划总体完成情况（堆叠柱状图）
+        function renderBizCompletionChart(bizPlans) {
+            if (!chartInstances.bizCompletion) return;
+
+            // 按计划类型统计完成/未完成
+            const typeMap = {};
+            bizPlans.forEach(p => {
+                const type = p.plan_type || '其他';
+                if (!typeMap[type]) {
+                    typeMap[type] = { completed: 0, incomplete: 0, total: 0 };
+                }
+                if (p.completion_status === '已完成') {
+                    typeMap[type].completed++;
+                } else {
+                    typeMap[type].incomplete++;
+                }
+                typeMap[type].total++;
+            });
+
+            const types = Object.keys(typeMap);
+            const completedData = types.map(t => typeMap[t].completed);
+            const incompleteData = types.map(t => typeMap[t].incomplete);
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        const type = params[0].name;
+                        const info = typeMap[type];
+                        const rate = info.total > 0 ? ((info.completed / info.total) * 100).toFixed(1) + '%' : '0%';
+                        return `${type}<br/>已完成: ${info.completed}<br/>未完成: ${info.incomplete}<br/>完成率: ${rate}`;
+                    }
+                },
+                legend: {
+                    data: ['已完成', '未完成'],
+                    bottom: 0,
+                    textStyle: { fontSize: 11 }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: types,
+                    axisLabel: { fontSize: 11, interval: 0, rotate: types.length > 5 ? 30 : 0 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { fontSize: 11 }
+                },
+                series: [
+                    {
+                        name: '已完成',
+                        type: 'bar',
+                        stack: 'total',
+                        data: completedData,
+                        itemStyle: { color: '#10b981' },
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            fontSize: 10,
+                            formatter: function(params) {
+                                return params.value > 0 ? params.value : '';
+                            }
+                        }
+                    },
+                    {
+                        name: '未完成',
+                        type: 'bar',
+                        stack: 'total',
+                        data: incompleteData,
+                        itemStyle: { color: '#f59e0b' },
+                        label: {
+                            show: true,
+                            position: 'inside',
+                            fontSize: 10,
+                            formatter: function(params) {
+                                return params.value > 0 ? params.value : '';
+                            }
+                        }
+                    }
+                ]
+            };
+
+            chartInstances.bizCompletion.setOption(option);
+            document.getElementById('chartBizCompletion').classList.toggle('no-data', types.length === 0);
+
+            // 双击跳转
+            chartInstances.bizCompletion.on('dblclick', function() {
+                window.location.href = 'business-plan-list.html';
+            });
+        }
+
+        // 渲染经营计划分部情况（按科室）
+        function renderBizDeptChart(bizPlans) {
+            if (!chartInstances.bizDept) return;
+
+            // 按责任科室统计
+            const deptMap = {};
+            bizPlans.forEach(p => {
+                const dept = p.department || '未分配';
+                if (!deptMap[dept]) {
+                    deptMap[dept] = { total: 0, completed: 0 };
+                }
+                deptMap[dept].total++;
+                if (p.completion_status === '已完成') {
+                    deptMap[dept].completed++;
+                }
+            });
+
+            const depts = Object.keys(deptMap).sort((a, b) => deptMap[b].total - deptMap[a].total);
+            const totalData = depts.map(d => deptMap[d].total);
+            const completedData = depts.map(d => deptMap[d].completed);
+            const completionRates = depts.map(d => 
+                deptMap[d].total > 0 ? ((deptMap[d].completed / deptMap[d].total) * 100).toFixed(1) : 0
+            );
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        const dept = params[0].name;
+                        const info = deptMap[dept];
+                        const rate = info.total > 0 ? ((info.completed / info.total) * 100).toFixed(1) + '%' : '0%';
+                        return `${dept}<br/>总数: ${info.total}<br/>已完成: ${info.completed}<br/>完成率: ${rate}`;
+                    }
+                },
+                legend: {
+                    data: ['计划总数', '已完成数'],
+                    bottom: 0,
+                    textStyle: { fontSize: 11 }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: depts,
+                    axisLabel: { fontSize: 11, interval: 0, rotate: depts.length > 5 ? 30 : 0 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { fontSize: 11 }
+                },
+                series: [
+                    {
+                        name: '计划总数',
+                        type: 'bar',
+                        data: totalData,
+                        itemStyle: { color: '#3b82f6' },
+                        barWidth: '35%'
+                    },
+                    {
+                        name: '已完成数',
+                        type: 'bar',
+                        data: completedData,
+                        itemStyle: { color: '#10b981' },
+                        barWidth: '35%'
+                    }
+                ]
+            };
+
+            chartInstances.bizDept.setOption(option);
+            document.getElementById('chartBizDept').classList.toggle('no-data', depts.length === 0);
+
+            // 双击跳转
+            chartInstances.bizDept.on('dblclick', function() {
+                window.location.href = 'business-plan-list.html';
+            });
+        }
+
+        // 渲染经营计划类型分布（饼图）
+        function renderBizTypeChart(bizPlans) {
+            if (!chartInstances.bizType) return;
+
+            // 按计划类型统计
+            const typeMap = {};
+            bizPlans.forEach(p => {
+                const type = p.plan_type || '其他';
+                typeMap[type] = (typeMap[type] || 0) + 1;
+            });
+
+            const pieData = Object.keys(typeMap).map(key => ({
+                name: key,
+                value: typeMap[key]
+            }));
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: '5%',
+                    top: 'center',
+                    textStyle: { fontSize: 11 }
+                },
+                series: [
+                    {
+                        name: '计划类型',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['35%', '50%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 4,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false,
+                            position: 'center'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: pieData
+                    }
+                ]
+            };
+
+            chartInstances.bizType.setOption(option);
+            document.getElementById('chartBizType').classList.toggle('no-data', pieData.length === 0);
+
+            // 双击跳转
+            chartInstances.bizType.on('dblclick', function() {
+                window.location.href = 'business-plan-list.html';
+            });
+        }
+
         // Render warning list
         function renderWarningList(warnings) {
             const container = document.getElementById('warningList');
@@ -937,7 +1219,6 @@
                 document.getElementById('dashboardNavBtn').style.display = 'none';
                 document.getElementById('planListNavBtn').style.display = 'none';
                 document.getElementById('planExcelNavBtn').style.display = 'none';
-                document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';
                 document.getElementById('groupNavBtn').style.display = 'flex';
@@ -985,6 +1266,13 @@
                     renderCategoryChart(categoryDist);
                     renderGroupStatusChart(groupStatusDist);
                     renderTrendChart(monthlyTrend);
+
+                    // 加载并渲染经营计划图表
+                    fetchBusinessPlans().then(bizPlans => {
+                        renderBizCompletionChart(bizPlans);
+                        renderBizDeptChart(bizPlans);
+                        renderBizTypeChart(bizPlans);
+                    });
                 }
                 renderWarningList(warningList);
 

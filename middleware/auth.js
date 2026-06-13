@@ -101,16 +101,21 @@ function requireRole(...allowedRoles) {
  */
 function checkLoginLock(username) {
   const db = getDb();
+  const now = new Date();
   const attempt = db.prepare(`
     SELECT * FROM sys_login_attempt 
-    WHERE username = ? AND lock_until > datetime('now')
+    WHERE username = ?
   `).get(username);
 
-  if (attempt) {
-    return {
-      locked: true,
-      lockUntil: new Date(attempt.lock_until)
-    };
+  if (attempt && attempt.lock_until) {
+    // SQLite存储的是UTC时间字符串，需要解析为UTC时间再比较
+    const lockUntilUtc = new Date(attempt.lock_until + 'Z'); // 标记为UTC时间
+    if (lockUntilUtc > now) {
+      return {
+        locked: true,
+        lockUntil: lockUntilUtc
+      };
+    }
   }
 
   return { locked: false, lockUntil: null };
@@ -124,6 +129,9 @@ function recordLoginFailure(username) {
   const db = getDb();
   const now = new Date();
   const lockUntil = new Date(now.getTime() + LOCK_DURATION);
+  // 转换为ISO字符串并去掉Z后缀，与SQLite datetime格式一致（存储UTC时间）
+  const lockUntilStr = lockUntil.toISOString().replace('Z', '');
+  const nowStr = now.toISOString().replace('Z', '');
 
   const existing = db.prepare('SELECT * FROM sys_login_attempt WHERE username = ?').get(username);
 
@@ -134,21 +142,21 @@ function recordLoginFailure(username) {
       // 锁定账户
       db.prepare(`
         UPDATE sys_login_attempt 
-        SET attempt_count = ?, lock_until = datetime(?), last_attempt = datetime('now')
+        SET attempt_count = ?, lock_until = ?, last_attempt = ?
         WHERE username = ?
-      `).run(newAttempts, lockUntil.toISOString(), username);
+      `).run(newAttempts, lockUntilStr, nowStr, username);
     } else {
       db.prepare(`
         UPDATE sys_login_attempt 
-        SET attempt_count = ?, last_attempt = datetime('now')
+        SET attempt_count = ?, last_attempt = ?
         WHERE username = ?
-      `).run(newAttempts, username);
+      `).run(newAttempts, nowStr, username);
     }
   } else {
     db.prepare(`
-      INSERT INTO sys_login_attempt (username, attempt_count, lock_until)
-      VALUES (?, 1, datetime(?))
-    `).run(username, lockUntil.toISOString());
+      INSERT INTO sys_login_attempt (username, attempt_count, lock_until, last_attempt)
+      VALUES (?, 1, ?, ?)
+    `).run(username, lockUntilStr, nowStr);
   }
 }
 

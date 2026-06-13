@@ -28,6 +28,9 @@ if (typeof process.pkg !== 'undefined') {
 let dbInstance = null;           // sql.js Database 实例
 let wrapperInstance = null;     // 包装后的数据库实例
 let dbReadyPromise = null;       // 初始化 Promise
+let saveTimer = null;             // 延迟保存定时器
+const SAVE_DELAY = 500;           // 延迟保存时间（毫秒）
+let pendingSave = false;           // 是否有待保存的更改
 
 /**
  * sql.js Database 包装类
@@ -40,7 +43,7 @@ class SqlJsWrapper {
   }
 
   /**
-   * 保存数据库到文件
+   * 保存数据库到文件（立即保存）
    */
   saveToFile() {
     try {
@@ -51,8 +54,36 @@ class SqlJsWrapper {
       const data = this.db.export();
       const buffer = Buffer.from(data);
       fs.writeFileSync(this.dbPath, buffer);
+      pendingSave = false;
     } catch (err) {
       console.error('保存数据库文件失败:', err);
+    }
+  }
+
+  /**
+   * 延迟保存（防抖），避免频繁写盘
+   */
+  scheduleSave() {
+    pendingSave = true;
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+    saveTimer = setTimeout(() => {
+      this.saveToFile();
+      saveTimer = null;
+    }, SAVE_DELAY);
+  }
+
+  /**
+   * 强制立即保存（用于程序退出等关键场景）
+   */
+  forceSave() {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    if (pendingSave) {
+      this.saveToFile();
     }
   }
 
@@ -142,8 +173,8 @@ class SqlJsWrapper {
             changesStmt.free();
           }
 
-          // 自动保存到文件
-          self.saveToFile();
+          // 自动保存到文件（延迟防抖）
+          self.scheduleSave();
 
           return { lastInsertRowid, changes };
         } catch (err) {
@@ -160,7 +191,7 @@ class SqlJsWrapper {
   exec(sql) {
     try {
       this.db.run(sql);
-      this.saveToFile();
+      this.scheduleSave();
     } catch (err) {
       console.error('SQL exec error:', sql, err);
     }
@@ -172,7 +203,7 @@ class SqlJsWrapper {
   run(sql, params = []) {
     try {
       this.db.run(sql, params);
-      this.saveToFile();
+      this.scheduleSave();
     } catch (err) {
       console.error('SQL run error:', sql, params, err);
     }
@@ -328,6 +359,24 @@ async function initDatabase() {
       )
     `);
     console.log('✓ sys_notification 表创建完成');
+
+    // 创建经营计划表
+    database.run(`
+      CREATE TABLE IF NOT EXISTS business_plan (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plan_name VARCHAR(200) NOT NULL,
+        plan_type VARCHAR(100),
+        department VARCHAR(100),
+        issue_date DATE,
+        expected_finish_date DATE,
+        completion_status VARCHAR(20) DEFAULT '未完成',
+        is_new_period INTEGER DEFAULT 0,
+        creator_id INTEGER,
+        create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        update_time DATETIME
+      )
+    `);
+    console.log('✓ business_plan 表创建完成');
 
     // 创建登录尝试表
     database.run(`
@@ -577,5 +626,103 @@ function getDbReady() {
   return dbReadyPromise;
 }
 
+// 进程退出时强制保存数据，防止丢失
+function handleShutdown() {
+  if (wrapperInstance && pendingSave) {
+    console.log('正在保存数据库...');
+    wrapperInstance.forceSave();
+    console.log('数据库已保存');
+  }
+}
+
+process.on('SIGINT', handleShutdown);
+process.on('SIGTERM', handleShutdown);
+process.on('exit', handleShutdown);
+
+// ===== 自动备份功能 =====
+const BACKUP_KEEP_COUNT = 7; // 保留最近7份备份
+const BACKUP_INTERVAL = 60 * 60 * 1000; // 每小时备份一次（可配置）
+let backupTimer = null;
+
+/**
+ * 创建数据库备份
+ */
+function createBackup() {
+  if (!wrapperInstance || !fs.existsSync(DB_PATH)) {
+    return;
+  }
+
+  try {
+    const backupDir = path.join(path.dirname(DB_PATH), 'backup');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    // 生成备份文件名（带时间戳）
+    const now = new Date();
+    const timestamp = now.toISOString()
+      .replace(/[:.]/g, '-')
+      .replace('T', '_')
+      .substring(0, 19);
+    const backupFile = path.join(backupDir, `icp_backup_${timestamp}.db`);
+
+    // 先强制保存当前数据，再复制
+    wrapperInstance.forceSave();
+    
+    // 复制数据库文件
+    fs.copyFileSync(DB_PATH, backupFile);
+    console.log(`数据库备份完成: ${backupFile}`);
+
+    // 清理旧备份，只保留最近N份
+    cleanupOldBackups(backupDir);
+  } catch (err) {
+    console.error('数据库备份失败:', err);
+  }
+}
+
+/**
+ * 清理旧备份文件
+ */
+function cleanupOldBackups(backupDir) {
+  try {
+    const files = fs.readdirSync(backupDir)
+      .filter(f => f.startsWith('icp_backup_') && f.endsWith('.db'))
+      .sort()
+      .reverse(); // 最新的在前
+
+    if (files.length > BACKUP_KEEP_COUNT) {
+      const toDelete = files.slice(BACKUP_KEEP_COUNT);
+      toDelete.forEach(f => {
+        fs.unlinkSync(path.join(backupDir, f));
+        console.log(`清理旧备份: ${f}`);
+      });
+    }
+  } catch (err) {
+    console.error('清理旧备份失败:', err);
+  }
+}
+
+/**
+ * 启动自动备份
+ */
+function startAutoBackup() {
+  if (backupTimer) {
+    clearInterval(backupTimer);
+  }
+  backupTimer = setInterval(createBackup, BACKUP_INTERVAL);
+  console.log(`自动备份已启动，间隔${BACKUP_INTERVAL / 60000}分钟，保留${BACKUP_KEEP_COUNT}份`);
+}
+
+/**
+ * 停止自动备份
+ */
+function stopAutoBackup() {
+  if (backupTimer) {
+    clearInterval(backupTimer);
+    backupTimer = null;
+    console.log('自动备份已停止');
+  }
+}
+
 // 导出模块
-module.exports = { initDatabase, getDb, getDbReady };
+module.exports = { initDatabase, getDb, getDbReady, createBackup, startAutoBackup, stopAutoBackup };

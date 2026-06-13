@@ -527,17 +527,14 @@
             if (role === 'ADMIN') {
                 // 管理员：只显示用户管理、小组管理、操作日志
                 document.getElementById('planListNavBtn').style.display = 'none';
-                document.getElementById('importExportNavBtn').style.display = 'none';
                 document.getElementById('logNavBtn').style.display = 'flex';
                 document.getElementById('adminNavBtn').style.display = 'flex';
                 document.getElementById('groupNavBtn').style.display = 'flex';
             } else if (['LEADER', 'DIRECTOR'].includes(role)) {
                 // 主任/组长：显示导入导出和操作日志
-                document.getElementById('importExportNavBtn').style.display = 'flex';
                 document.getElementById('logNavBtn').style.display = 'flex';
             } else {
                 // MEMBER：只显示重点任务列表和导入导出
-                document.getElementById('importExportNavBtn').style.display = 'flex';
             }
 
             // 获取URL参数
@@ -583,8 +580,8 @@
             try {
                 const data = await apiRequest(`${API_BASE}/notifications?page=1&pageSize=10`);
                 if (data.code === 200) {
-                    renderNotifications(data.data?.list || []);
-                    if (data.data?.total > 0) {
+                    renderNotifications((data.data && data.data.list) || []);
+                    if ((data.data && data.data.total) > 0) {
                         document.getElementById('notifBadge').textContent = data.data.total > 99 ? '99+' : data.data.total;
                         document.getElementById('notifBadge').classList.remove('hidden');
                     }

@@ -9,7 +9,7 @@ const cors = require('cors');
 const path = require('path');
 
 // 导入数据库初始化模块
-const { initDatabase, getDbReady } = require('./db/init');
+const { initDatabase, getDbReady, startAutoBackup, createBackup } = require('./db/init');
 
 // 导入路由
 const authRoutes = require('./routes/auth');
@@ -18,6 +18,8 @@ const usersRoutes = require('./routes/users');
 const groupsRoutes = require('./routes/groups');
 const notificationsRoutes = require('./routes/notifications');
 const logsRoutes = require('./routes/logs');
+const statsRoutes = require('./routes/stats');
+const businessPlansRoutes = require('./routes/business-plans');
 
 // 创建Express应用
 const app = express();
@@ -25,23 +27,9 @@ const PORT = process.env.PORT || 3000;
 console.log('PORT setting:', PORT);
 
 // 中间件配置
-// 跨域配置（生产环境限制来源域名）
-const allowedOrigins = [
-  'https://web-production-ecf21.up.railway.app',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
-];
+// 跨域配置（内网环境允许所有来源）
 app.use(cors({
-  origin: function(origin, callback) {
-    // 允许无origin的请求（如服务端请求、Postman）
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS: 来源不在白名单')); // 拒绝未授权来源
-      console.warn('CORS: 未在白名单的来源:', origin);
-    }
-  },
+  origin: true,  // 允许所有来源
   credentials: true
 }));
 app.use(express.json({ limit: '1mb' })); // 解析JSON请求体，限制1MB
@@ -118,6 +106,8 @@ app.use('/api/users', usersRoutes);         // 用户管理路由
 app.use('/api/groups', groupsRoutes);       // 小组路由
 app.use('/api/notifications', notificationsRoutes); // 消息通知路由
 app.use('/api/logs', logsRoutes);           // 操作日志路由
+app.use('/api/stats', statsRoutes);         // 统计数据路由
+app.use('/api/business-plans', businessPlansRoutes); // 经营计划路由
 
 // 404处理
 app.use((req, res) => {
@@ -145,6 +135,11 @@ async function startServer() {
     
     // 等待数据库初始化完成
     await initDatabase();
+    
+    // 启动自动备份
+    startAutoBackup();
+    // 启动时创建一份备份
+    createBackup();
     
     // 启动服务器
     app.listen(PORT, () => {

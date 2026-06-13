@@ -18,36 +18,82 @@ const { success, error } = require('../utils/response');
 const router = express.Router();
 
 /**
+ * 密码强度校验
+ * @param {string} password - 密码
+ * @returns {Object} { valid: boolean, message: string }
+ */
+function validatePassword(password) {
+  if (!password || password.length < 6) {
+    return { valid: false, message: '密码长度不能少于6位' };
+  }
+  if (password.length > 20) {
+    return { valid: false, message: '密码长度不能超过20位' };
+  }
+  // 至少包含字母和数字
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  if (!hasLetter || !hasNumber) {
+    return { valid: false, message: '密码需要同时包含字母和数字' };
+  }
+  // 不能是常见弱密码
+  const weakPasswords = ['123456', 'password', '12345678', '123456789', '1234567', '123456a', '123456b'];
+  if (weakPasswords.includes(password.toLowerCase())) {
+    return { valid: false, message: '密码过于简单，请设置更复杂的密码' };
+  }
+  return { valid: true, message: 'ok' };
+}
+
+/**
  * POST /api/auth/login
  * 用户登录
  * 验证工号和密码，成功返回JWT Token
  */
 router.post('/login', (req, res) => {
   const { username, password } = req.body;
+  const ip = req.ip;
+  const userAgent = req.headers['user-agent'] || '';
 
   // 参数验证
   if (!username || !password) {
     return error(res, 400, '工号和密码不能为空');
   }
 
+  const db = getDb();
+
   // 检查账户锁定状态
   const lockStatus = checkLoginLock(username);
   if (lockStatus.locked) {
     const remainingMinutes = Math.ceil((lockStatus.lockUntil - new Date()) / 60000);
+    // 记录登录失败日志（锁定尝试）
+    db.prepare(`
+      INSERT INTO sys_operation_log (user_id, username, operation_type, target_type, ip_address, user_agent, before_data)
+      VALUES (?, ?, 'LOGIN_FAILED', 'USER', ?, ?, ?)
+    `).run(null, username, ip, userAgent, JSON.stringify({ reason: '账户已锁定', remaining_minutes: remainingMinutes }));
+    
     return error(res, 423, `登录失败次数过多，账户已锁定，请在${remainingMinutes}分钟后重试`);
   }
-
-  const db = getDb();
 
   // 查询用户
   const user = db.prepare('SELECT * FROM sys_user WHERE username = ?').get(username);
 
   if (!user) {
+    // 记录登录失败日志（用户不存在）
+    db.prepare(`
+      INSERT INTO sys_operation_log (user_id, username, operation_type, target_type, ip_address, user_agent, before_data)
+      VALUES (?, ?, 'LOGIN_FAILED', 'USER', ?, ?, ?)
+    `).run(null, username, ip, userAgent, JSON.stringify({ reason: '用户不存在' }));
+    
     return error(res, 401, '工号或密码错误');
   }
 
   // 检查用户状态
   if (user.status === 0) {
+    // 记录登录失败日志（账户禁用）
+    db.prepare(`
+      INSERT INTO sys_operation_log (user_id, username, operation_type, target_type, target_id, ip_address, user_agent, before_data)
+      VALUES (?, ?, 'LOGIN_FAILED', 'USER', ?, ?, ?, ?)
+    `).run(user.id, username, user.id, ip, userAgent, JSON.stringify({ reason: '账户已禁用' }));
+    
     return error(res, 403, '账户已被禁用');
   }
 
@@ -56,6 +102,13 @@ router.post('/login', (req, res) => {
   if (!isValidPassword) {
     // 记录登录失败
     recordLoginFailure(username);
+    
+    // 记录登录失败日志（密码错误）
+    db.prepare(`
+      INSERT INTO sys_operation_log (user_id, username, operation_type, target_type, target_id, ip_address, user_agent, before_data)
+      VALUES (?, ?, 'LOGIN_FAILED', 'USER', ?, ?, ?, ?)
+    `).run(user.id, username, user.id, ip, userAgent, JSON.stringify({ reason: '密码错误' }));
+    
     return error(res, 401, '工号或密码错误');
   }
 
@@ -172,8 +225,10 @@ router.put('/password', authenticate, (req, res) => {
     return error(res, 400, '请提供新密码');
   }
 
-  if (newPassword.length < 6) {
-    return error(res, 400, '新密码长度不能少于6位');
+  // 密码强度校验
+  const pwdCheck = validatePassword(newPassword);
+  if (!pwdCheck.valid) {
+    return error(res, 400, pwdCheck.message);
   }
 
   const db = getDb();
@@ -187,6 +242,11 @@ router.put('/password', authenticate, (req, res) => {
     }
     if (!bcrypt.compareSync(oldPassword, user.password)) {
       return error(res, 400, '旧密码不正确');
+    }
+    
+    // 新密码不能与旧密码相同
+    if (bcrypt.compareSync(newPassword, user.password)) {
+      return error(res, 400, '新密码不能与旧密码相同');
     }
   }
 
