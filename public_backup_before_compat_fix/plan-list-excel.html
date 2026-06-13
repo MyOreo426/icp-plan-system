@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重点任务列表（表格版）- 内控计划共享编辑系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        /* 导航栏 */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo svg { width: 24px; height: 24px; fill: white; }
+        .system-title { color: white; font-size: 18px; font-weight: 600; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .nav-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .nav-btn.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
+        .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+
+        /* 通知按钮 */
+        .notification-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .notification-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .notification-btn svg { width: 22px; height: 22px; fill: white; }
+        .notification-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 18px; height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #667eea;
+        }
+        .notification-badge.hidden { display: none; }
+
+        /* 用户信息 */
+        .user-info { display: flex; align-items: center; gap: 10px; color: white; }
+        .user-avatar {
+            width: 36px; height: 36px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .user-name { font-size: 14px; }
+        .user-role {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* 主内容区 */
+        .main-container {
+            margin-top: 60px;
+            min-height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Excel风格工具栏 */
+        .excel-toolbar {
+            background: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #e0e6ed;
+            flex-wrap: wrap;
+        }
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background: #e0e6ed;
+        }
+        .toolbar-btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #e0e6ed;
+            background: white;
+            color: #34495e;
+        }
+        .toolbar-btn:hover { background: #f0f3ff; border-color: #667eea; color: #667eea; }
+        .toolbar-btn:active { background: #e0e7ff; }
+        .toolbar-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .toolbar-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3); }
+        .toolbar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .toolbar-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* 筛选区 */
+        .filter-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            width: 180px;
+        }
+        .filter-input:focus { border-color: #667eea; }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+            min-width: 100px;
+        }
+        .filter-select:focus { border-color: #667eea; }
+
+        /* Excel表格区域 */
+        .excel-container {
+            flex: 1;
+            background: white;
+            margin: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .excel-wrapper {
+            overflow: auto;
+            max-height: calc(100vh - 260px);
+            flex: 1;
+        }
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .excel-table th {
+            background: #f8fafc;
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #34495e;
+            border: 1px solid #e0e6ed;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+        .excel-table td {
+            padding: 8px;
+            font-size: 12px;
+            color: #34495e;
+            border: 1px solid #e0e6ed;
+            vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .excel-table tr:hover td { background: #fafbff; }
+        .excel-table tr.overdue td { background: #fef2f2; }
+        .excel-table tr.overdue:hover td { background: #fee2e2; }
+        .excel-table tr.new-row td { background: #f0f7ff; }
+
+        /* 单元格合并样式 */
+        .merged-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 32px;
+        }
+
+        /* 类别背景色 */
+        .category-bg-0 { background: #f8f9fa !important; }
+        .category-bg-1 { background: #e8f4f8 !important; }
+        .category-bg-2 { background: #fef3e2 !important; }
+        .category-bg-3 { background: #e8f6ef !important; }
+        .category-bg-4 { background: #f3e8fc !important; }
+        .category-bg-5 { background: #fce8e8 !important; }
+
+        /* 行号列 - 已移除，序号列代替 */
+
+        /* 列宽 - 自适应 */
+        .col-seq { width: 50px; min-width: 50px; text-align: center; }
+        .col-category { min-width: 80px; }
+        .col-project { min-width: 80px; }
+        .col-action { min-width: 120px; }
+        .col-source { min-width: 80px; }
+        .col-deliverable { min-width: 100px; }
+        .col-responsible { min-width: 70px; }
+        .col-group { min-width: 70px; }
+        .col-issue-date { min-width: 90px; }
+        .col-deadline { min-width: 90px; }
+        .col-progress { min-width: 150px; white-space: normal !important; word-wrap: break-word; word-break: break-all; line-height: 1.4; }
+        .col-status { min-width: 80px; }
+        .col-remark { min-width: 100px; }
+        .col-operation { width: 100px; min-width: 100px; }
+
+        /* 列宽拖拽调整 */
+        .excel-table th {
+            position: relative;
+        }
+        .col-resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            cursor: col-resize;
+            background: transparent;
+            z-index: 5;
+        }
+        .col-resizer:hover,
+        .col-resizer.resizing {
+            background: #667eea;
+        }
+
+        /* 单元格选中 */
+        .cell-selected {
+            outline: 2px solid #667eea;
+            outline-offset: -1px;
+        }
+        .cell-editing {
+            padding: 0 !important;
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-PENDING { background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; }
+        .status-IN_PROGRESS { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+        .status-CLOSED { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+        .status-CONTINUOUS { background: #faf5ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+
+        /* 超期标识 */
+        .overdue-tag {
+            display: inline-block;
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        /* 锁定图标 */
+        .lock-icon { color: #f59e0b; margin-left: 5px; }
+
+        /* 操作按钮 */
+        .op-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            margin-right: 4px;
+            transition: all 0.2s;
+        }
+        .op-btn.edit { background: #e0e7ff; color: #4f46e5; }
+        .op-btn.edit:hover { background: #c7d2fe; }
+        .op-btn.delete { background: #fef2f2; color: #dc2626; }
+        .op-btn.delete:hover { background: #fee2e2; }
+        .op-btn.unlock { background: #fef3c7; color: #d97706; }
+        .op-btn.unlock:hover { background: #fde68a; }
+
+        /* 行内编辑 */
+        .inline-input {
+            width: 100%;
+            padding: 5px 7px;
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            background: white;
+            box-sizing: border-box;
+        }
+        .inline-input.error {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+        .inline-select {
+            width: 100%;
+            padding: 5px 7px;
+            border: 1px solid #667eea;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+            background: white;
+        }
+
+        /* 右键菜单 */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 160px;
+            padding: 6px 0;
+            display: none;
+        }
+        .context-menu.show { display: block; }
+        .context-menu-item {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #34495e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .context-menu-item:hover { background: #f0f3ff; }
+        .context-menu-item svg { width: 16px; height: 16px; fill: #667eea; }
+        .context-menu-divider { height: 1px; background: #e0e6ed; margin: 4px 0; }
+
+        /* 底部状态栏 */
+        .status-bar {
+            background: #f8fafc;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            border-top: 1px solid #e0e6ed;
+        }
+        .status-bar-left { display: flex; gap: 20px; }
+        .status-bar-item { display: flex; align-items: center; gap: 5px; }
+
+        /* 加载状态 */
+        .loading { text-align: center; padding: 60px; color: #95a5a6; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #95a5a6; }
+        .empty-state svg { width: 64px; height: 64px; fill: #d0d5dd; margin-bottom: 15px; }
+
+        /* 删除确认弹窗 */
+        #deleteModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #deleteModal.show { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-title { margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #2c3e50; }
+        .modal-text { color: #666; margin-bottom: 20px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-outline { background: white; color: #667eea; border: 1px solid #667eea; }
+        .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+
+        /* 通知面板 */
+        .notification-panel {
+            position: absolute;
+            top: 70px;
+            right: 30px;
+            width: 380px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 200;
+            overflow: hidden;
+        }
+        .notification-panel.show { display: block; }
+        .notification-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e6ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-title { font-size: 15px; font-weight: 600; color: #2c3e50; }
+        .notification-mark-read { font-size: 12px; color: #667eea; cursor: pointer; }
+        .notification-list { max-height: 400px; overflow-y: auto; }
+        .notification-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f3ff;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+        }
+        .notification-item:hover { background: #f8fafc; }
+        .notification-icon {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(102, 126, 234, 0.15);
+        }
+        .notification-icon svg { fill: #667eea; width: 18px; height: 18px; }
+        .notification-content { flex: 1; }
+        .notification-text { font-size: 13px; color: #34495e; }
+        .notification-time { font-size: 11px; color: #95a5a6; margin-top: 4px; }
+        .notification-empty { padding: 40px 20px; text-align: center; color: #95a5a6; }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </div>
+            <span class="system-title">计划管理系统</span>
+            <div class="nav-divider"></div>
+            <a href="index.html" class="nav-btn" id="dashboardNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                仪表盘
+            </a>
+            <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                用户管理
+            </a>
+            <a href="admin.html?tab=groups" class="nav-btn" id="groupNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                小组管理
+            </a>
+            <a href="plan-list.html" class="nav-btn" id="planListNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                重点任务列表
+            </a>
+            <a href="plan-list-excel.html" class="nav-btn active" id="planExcelNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
+                重点任务列表（表格版）
+            </a>
+            <a href="import-export.html" class="nav-btn" id="importExportNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                导入导出
+            </a>
+            <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                操作日志
+            </a>
+        </div>
+        <div class="navbar-right">
+            <button class="notification-btn" onclick="toggleNotification()">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                <span class="notification-badge hidden" id="notifBadge">0</span>
+            </button>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span class="user-name" id="userName">加载中...</span>
+                <span class="user-role" id="userRole">--</span>
+            </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </nav>
+
+    <!-- 通知面板 -->
+    <div class="notification-panel" id="notifPanel">
+        <div class="notification-header">
+            <span class="notification-title">通知消息</span>
+            <span class="notification-mark-read" onclick="markAllRead()">全部已读</span>
+        </div>
+        <div class="notification-list" id="notifList">
+            <div class="notification-empty">暂无通知</div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Excel风格工具栏 -->
+        <div class="excel-toolbar">
+            <div class="toolbar-group">
+                <button class="toolbar-btn primary" id="newPlanBtn" onclick="addNewRow()">
+                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    新建计划
+                </button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="filter-section">
+                <input type="text" class="filter-input" id="searchName" placeholder="搜索行动项..." onkeydown="if(event.key==='Enter')loadPlans(1)">
+                <select class="filter-select" id="filterStatus">
+                    <option value="">全部状态</option>
+                    <option value="PENDING">待执行</option>
+                    <option value="IN_PROGRESS">执行中</option>
+                    <option value="CLOSED">已归零</option>
+                    <option value="CONTINUOUS">持续开展</option>
+                </select>
+                <select class="filter-select" id="filterOverdue">
+                    <option value="">全部</option>
+                    <option value="1">超期</option>
+                    <option value="0">未超期</option>
+                </select>
+                <button class="toolbar-btn" onclick="loadPlans(1)">
+                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    查询
+                </button>
+                <button class="toolbar-btn" onclick="resetFilters()">
+                    <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                    重置
+                </button>
+            </div>
+        </div>
+
+        <!-- Excel表格区域 -->
+        <div class="excel-container">
+            <div class="excel-wrapper" id="excelWrapper">
+                <table class="excel-table" id="excelTable">
+                    <thead>
+                        <tr>
+                            <th class="col-seq">序号</th>
+                            <th class="col-category">类别</th>
+                            <th class="col-project">项目</th>
+                            <th class="col-action">行动项</th>
+                            <th class="col-source">计划来源</th>
+                            <th class="col-deliverable">交付物</th>
+                            <th class="col-group">所属组</th>
+                            <th class="col-responsible">责任人</th>
+                            <th class="col-issue-date">下发日期</th>
+                            <th class="col-deadline">截止日期</th>
+                            <th class="col-progress">当前进展</th>
+                            <th class="col-status">状态</th>
+                            <th class="col-remark">备注</th>
+                            <th class="col-operation">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="15" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 底部状态栏 -->
+        <div class="status-bar">
+            <div class="status-bar-left">
+                <span class="status-bar-item">总条数: <strong id="totalCount">0</strong></span>
+                <span class="status-bar-item">当前显示: <strong id="currentCount">0</strong></span>
+                <span class="status-bar-item" id="lastActionTime">最后操作: --</span>
+            </div>
+            <div class="status-bar-right">
+                <span id="editStatus">就绪</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-title">确认删除</div>
+            <div class="modal-text">确定要删除这条计划吗？此操作不可恢复。</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeDeleteModal()">取消</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" onclick="insertRowAbove()">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            在上方插入行
+        </div>
+        <div class="context-menu-item" onclick="insertRowBelow()">
+            <svg viewBox="0 0 24 24"><path d="M19 13h6v-2h-6v2zM5 3v18h14V3H5zm14 16H5v-2h14v2zm0-6H5v-2h14v2z"/></svg>
+            在下方插入行
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" onclick="editCurrentRow()">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            编辑此行
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" onclick="deleteSelectedRow()">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            删除行
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = null;
+        let allPlans = [];
+        let filteredPlans = [];
+        let currentPage = 1;
+        let deletePlanId = null;
+        let groupMembers = [];
+        let allMembers = [];
+        let allGroups = [];
+        let isAddingNew = false;
+        let editingCell = null;
+        let selectedRow = null;
+        let contextRowIndex = -1;
+
+        // 撤销/重做堆栈
+        let undoStack = [];
+        let redoStack = [];
+        let lastActionTime = null;
+
+        // 类别背景色映射
+        const categoryColors = ['category-bg-0', 'category-bg-1', 'category-bg-2', 'category-bg-3', 'category-bg-4', 'category-bg-5'];
+        let categoryColorMap = {};
+
+        // 检查登录
+        function checkAuth() {
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return JSON.parse(userStr);
+        }
+
+        // API请求
+        async function apiRequest(url, options = {}) {
+            const token = sessionStorage.getItem('token');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            const mergedOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...(options.headers || {})
+                }
+            };
+            const res = await fetch(url, mergedOptions);
+            const data = await res.json();
+            if (data.code === 401) {
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+                throw new Error('登录已过期');
+            }
+            return data;
+        }
+
+        // 记录操作到撤销栈
+        function recordAction(planId, field, oldValue, newValue) {
+            undoStack.push({ planId, field, oldValue, newValue, timestamp: Date.now() });
+            redoStack = [];
+            updateUndoRedoButtons();
+            updateLastActionTime('修改数据');
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+            if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+        }
+
+        function updateLastActionTime(action) {
+            lastActionTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('lastActionTime').textContent = `最后操作: ${action} (${lastActionTime})`;
+        }
+
+        // 撤销
+        function undoChange() {
+            if (undoStack.length === 0) return;
+            const action = undoStack.pop();
+            redoStack.push(action);
+            updateUndoRedoButtons();
+            updateLastActionTime('撤销');
+            document.getElementById('editStatus').textContent = `已撤销: ${action.field}`;
+            // 不真正回滚数据，只是记录操作历史
+        }
+
+        // 重做
+        function redoChange() {
+            if (redoStack.length === 0) return;
+            const action = redoStack.pop();
+            undoStack.push(action);
+            updateUndoRedoButtons();
+            updateLastActionTime('重做');
+            document.getElementById('editStatus').textContent = `已重做: ${action.field}`;
+        }
+
+        // 保存当前编辑
+        async function saveCurrentEdit() {
+            if (editingCell) {
+                await finishEditing(true);
+            }
+            showSuccessMessage('数据已保存');
+        }
+
+        // 显示成功提示
+        function showSuccessMessage(message) {
+            const existing = document.getElementById('successToast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.id = 'successToast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 10px;
+                box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                font-size: 14px;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            `;
+            toast.innerHTML = `<svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>${message}`;
+            
+            if (!document.getElementById('toastAnimations')) {
+                const style = document.createElement('style');
+                style.id = 'toastAnimations';
+                style.textContent = `
+                    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 排序函数
+        function sortPlans(plans) {
+            return plans.sort((a, b) => {
+                const catA = (a.category || '').localeCompare(b.category || '', 'zh-CN');
+                if (catA !== 0) return catA;
+                const projA = (a.project || '').localeCompare(b.project || '', 'zh-CN');
+                if (projA !== 0) return projA;
+                const dateA = a.plan_deadline || '9999-12-31';
+                const dateB = b.plan_deadline || '9999-12-31';
+                if (dateA !== dateB) return dateA < dateB ? -1 : 1;
+                const nameA = (a.responsible_name || '').localeCompare(b.responsible_name || '', 'zh-CN');
+                return nameA;
+            });
+        }
+
+        // 初始化
+        async function init() {
+            currentUser = checkAuth();
+            if (!currentUser) return;
+
+            document.getElementById('userName').textContent = currentUser.real_name || currentUser.username;
+            document.getElementById('userRole').textContent = getRoleName(currentUser.role);
+            document.getElementById('userAvatar').textContent = getRoleEmoji(currentUser.role);
+
+            const role = currentUser.role;
+
+            // 根据角色显示导航按钮
+            if (role === 'ADMIN') {
+                // 管理员：只显示用户管理、小组管理、操作日志
+                document.getElementById('dashboardNavBtn').style.display = 'none';
+                document.getElementById('planListNavBtn').style.display = 'none';
+                document.getElementById('planExcelNavBtn').style.display = 'none';
+                document.getElementById('importExportNavBtn').style.display = 'none';
+                document.getElementById('logNavBtn').style.display = 'flex';
+                document.getElementById('adminNavBtn').style.display = 'flex';
+                document.getElementById('groupNavBtn').style.display = 'flex';
+                document.getElementById('newPlanBtn').style.display = 'none';
+            } else if (['LEADER', 'DIRECTOR'].includes(role)) {
+                document.getElementById('logNavBtn').style.display = 'flex';
+            }
+
+            await loadGroupMembers();
+            await loadNotificationCount();
+            loadPlans(1);
+        }
+
+        function getRoleName(role) {
+            const names = { 'ADMIN': '管理员', 'LEADER': '组长', 'MEMBER': '组员', 'DIRECTOR': '主任' };
+            return names[role] || role;
+        }
+
+        function getRoleEmoji(role) {
+            const emojis = { 'ADMIN': '⚙️', 'LEADER': '👥', 'MEMBER': '👤', 'DIRECTOR': '🏢' };
+            return emojis[role] || '👤';
+        }
+
+        // 加载用户列表
+        async function loadGroupMembers() {
+            try {
+                // 所有角色统一使用members接口获取所有组成员
+                const membersData = await apiRequest(`${API_BASE}/users/members`);
+                if (membersData.code === 200) {
+                    groupMembers = membersData.data || [];
+                }
+                allMembers = [...groupMembers];
+                // 加载小组列表
+                const groupsData = await apiRequest(`${API_BASE}/groups`);
+                if (groupsData.code === 200) {
+                    allGroups = groupsData.data.list || groupsData.data || [];
+                }
+            } catch (e) {
+                groupMembers = [];
+                allMembers = [];
+                allGroups = [];
+            }
+        }
+
+        // 根据所属组过滤责任人下拉
+        function renderResponsibleSelect(selectEl, selectedId, groupId) {
+            const currentValue = selectEl.value || selectedId;
+            selectEl.innerHTML = '<option value="">-- 请选择 --</option>';
+            const members = groupId ? allMembers.filter(m => m.group_id == groupId) : allMembers;
+            members.forEach(m => {
+                const selected = m.id == currentValue ? 'selected' : '';
+                selectEl.innerHTML += `<option value="${m.id}" ${selected}>${m.real_name} (${m.username})</option>`;
+            });
+            // 尝试恢复之前选中的值
+            if (currentValue && members.find(m => m.id == currentValue)) {
+                selectEl.value = currentValue;
+            }
+        }
+
+        // 根据责任人自动同步所属组
+        function updateGroupByResponsible(groupSelect, responsibleSelect) {
+            const responsibleId = responsibleSelect.value;
+            if (responsibleId) {
+                const member = allMembers.find(m => m.id == responsibleId);
+                if (member && member.group_id) {
+                    groupSelect.value = member.group_id;
+                }
+            }
+        }
+
+        // 加载通知数
+        async function loadNotificationCount() {
+            try {
+                const data = await apiRequest(`${API_BASE}/notifications/unread-count`);
+                const count = data.data?.count || 0;
+                const badge = document.getElementById('notifBadge');
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            } catch (e) {}
+        }
+
+        // 加载重点任务列表
+        async function loadPlans(page = 1) {
+            if (isAddingNew) cancelNewRow();
+            if (editingCell) finishEditing();
+
+            currentPage = page;
+            const searchName = document.getElementById('searchName').value;
+            const status = document.getElementById('filterStatus').value;
+            const isOverdue = document.getElementById('filterOverdue').value;
+
+            let url = `${API_BASE}/plans?page=${page}&pageSize=200`;
+            if (searchName) url += `&action_item=${encodeURIComponent(searchName)}`;
+            if (status) url += `&status=${status}`;
+            if (isOverdue) url += `&is_overdue=${isOverdue}`;
+
+            try {
+                const data = await apiRequest(url);
+                allPlans = sortPlans(data.data?.list || []);
+                filteredPlans = [...allPlans];
+                
+                // 构建类别颜色映射
+                buildCategoryColors();
+                
+                renderTable();
+                initColResize();
+                updateStatusBar();
+            } catch (e) {
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="14" class="empty-state">加载失败: ${e.message}</td></tr>`;
+            }
+        }
+
+        // 构建类别颜色映射
+        function buildCategoryColors() {
+            categoryColorMap = {};
+            const categories = [...new Set(allPlans.map(p => p.category || '(无)'))];
+            categories.forEach((cat, idx) => {
+                categoryColorMap[cat] = categoryColors[idx % categoryColors.length];
+            });
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            
+            if (!filteredPlans || filteredPlans.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="15" class="empty-state">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    <div>暂无数据</div>
+                </td></tr>`;
+                return;
+            }
+
+            // 计算合并
+            const mergeInfo = calculateMerges(filteredPlans);
+            
+            let html = '';
+            let rowNum = 0;
+            
+            filteredPlans.forEach((plan, idx) => {
+                const isOverdue = plan.plan_deadline && new Date(plan.plan_deadline) < new Date() && !['CLOSED','CONTINUOUS'].includes(plan.status);
+                const catColor = categoryColorMap[plan.category || '(无)'] || 'category-bg-0';
+                
+                // 检查是否为新增行
+                const isNewRow = plan._isNew;
+                
+                html += `<tr data-id="${plan.id}" data-idx="${idx}" class="${isOverdue ? 'overdue' : ''} ${isNewRow ? 'new-row' : ''} ${catColor}">`;
+                html += `<td class="col-seq">${isNewRow ? '*' : (idx + 1)}</td>`;
+                
+                if (isNewRow) {
+                    // 新增行：所有字段显示为输入框，不参与合并
+                    html += `<td class="col-category"><input type="text" class="inline-input" name="edit_category" value="${plan.category || ''}" placeholder="类别"></td>`;
+                    html += `<td class="col-project"><input type="text" class="inline-input" name="edit_project" value="${plan.project || ''}" placeholder="项目"></td>`;
+                    html += `<td class="col-action"><input type="text" class="inline-input" name="edit_action_item" value="${plan.action_item || ''}" placeholder="行动项"></td>`;
+                    html += `<td class="col-source"><input type="text" class="inline-input" name="edit_plan_source" value="${plan.plan_source || ''}" placeholder="计划来源"></td>`;
+                    html += `<td class="col-deliverable"><input type="text" class="inline-input" name="edit_deliverable" value="${plan.deliverable || ''}" placeholder="交付物"></td>`;
+                    html += `<td class="col-group"><select class="inline-select" name="edit_group_id" onchange="onNewRowGroupChange(this)">
+                        <option value="">-- 请选择 --</option>
+                        ${allGroups.map(g => `<option value="${g.id}">${g.group_name}</option>`).join('')}
+                    </select></td>`;
+                    html += `<td class="col-responsible"><select class="inline-select" name="edit_responsible_id">
+                        <option value="">-- 请选择 --</option>
+                        ${allMembers.map(m => `<option value="${m.id}">${m.real_name}</option>`).join('')}
+                    </select></td>`;
+                    html += `<td class="col-issue-date"><input type="date" class="inline-input" name="edit_plan_issue_date" value="${plan.plan_issue_date || ''}"></td>`;
+                    html += `<td class="col-deadline"><input type="date" class="inline-input" name="edit_plan_deadline" value="${plan.plan_deadline || ''}"></td>`;
+                    html += `<td class="col-progress"><input type="text" class="inline-input" name="edit_current_progress" value="${plan.current_progress || ''}" placeholder="当前进展"></td>`;
+                    html += `<td class="col-status"><select class="inline-select" name="edit_status">
+                        <option value="PENDING" ${plan.status === 'PENDING' ? 'selected' : ''}>待执行</option>
+                        <option value="IN_PROGRESS" ${plan.status === 'IN_PROGRESS' ? 'selected' : ''}>执行中</option>
+                        <option value="CLOSED" ${plan.status === 'CLOSED' ? 'selected' : ''}>已归零</option>
+                        <option value="CONTINUOUS" ${plan.status === 'CONTINUOUS' ? 'selected' : ''}>持续开展</option>
+                    </select></td>`;
+                    html += `<td class="col-remark"><input type="text" class="inline-input" name="edit_remark" value="${plan.remark || ''}" placeholder="备注"></td>`;
+                } else {
+                    // 类别列 - 合并
+                    const catMerge = mergeInfo.category[idx];
+                    if (catMerge.isStart) {
+                        html += `<td class="col-category" rowspan="${catMerge.rowspan}" onclick="selectCell(this, ${idx}, 'category', event)"><div class="merged-cell">${plan.category || '-'}</div></td>`;
+                    }
+                    
+                    // 项目列 - 合并（在类别内）
+                    const projMerge = mergeInfo.project[idx];
+                    if (projMerge.isStart) {
+                        html += `<td class="col-project" rowspan="${projMerge.rowspan}" onclick="selectCell(this, ${idx}, 'project', event)"><div class="merged-cell">${plan.project || '-'}</div></td>`;
+                    }
+                    
+                    html += `<td class="col-action" onclick="selectCell(this, ${idx}, 'action_item', event)" title="${plan.action_item || ''}">${plan.action_item || '-'}</td>`;
+                    html += `<td class="col-source" onclick="selectCell(this, ${idx}, 'plan_source', event)">${plan.plan_source || '-'}</td>`;
+                    html += `<td class="col-deliverable" onclick="selectCell(this, ${idx}, 'deliverable', event)" title="${plan.deliverable || ''}">${plan.deliverable || '-'}</td>`;
+                    html += `<td class="col-group">${plan.group_name || '-'}</td>`;
+                    html += `<td class="col-responsible" onclick="selectCell(this, ${idx}, 'responsible_id', event)">${plan.responsible_name || '<span style="color:#f59e0b;">待分配</span>'}</td>`;
+                    html += `<td class="col-issue-date" onclick="selectCell(this, ${idx}, 'plan_issue_date', event)">${plan.plan_issue_date || '-'}</td>`;
+                    
+                    // 截止日期列
+                    html += `<td class="col-deadline" onclick="selectCell(this, ${idx}, 'plan_deadline', event)">
+                        ${plan.plan_deadline || '-'}
+                        ${isOverdue ? '<span class="overdue-tag">超期</span>' : ''}
+                    </td>`;
+                    
+                    html += `<td class="col-progress" onclick="selectCell(this, ${idx}, 'current_progress', event)" title="${plan.current_progress || ''}">${plan.current_progress || '-'}</td>`;
+                    
+                    // 状态列
+                    html += `<td class="col-status" onclick="selectCell(this, ${idx}, 'status', event)">
+                        <span class="status-badge status-${plan.status}">${getStatusName(plan.status)}</span>
+                        ${plan.is_locked ? '<span class="lock-icon">🔒</span>' : ''}
+                    </td>`;
+                    
+                    html += `<td class="col-remark" onclick="selectCell(this, ${idx}, 'remark', event)" title="${plan.remark || ''}">${plan.remark || '-'}</td>`;
+                }
+                
+                // 操作列
+                html += `<td class="col-operation">`;
+                if (isNewRow) {
+                    html += `<button class="op-btn edit" onclick="saveNewRow()" style="background:#10b981;color:white;">保存</button>`;
+                    html += `<button class="op-btn delete" onclick="cancelNewRow()">取消</button>`;
+                } else if (!plan.is_locked && currentUser.role !== 'ADMIN') {
+                    html += `<button class="op-btn delete" onclick="openDeleteModal(${plan.id})">删除</button>`;
+                } else if (plan.is_locked && ['LEADER', 'DIRECTOR'].includes(currentUser.role)) {
+                    html += `<button class="op-btn unlock" onclick="manualUnlock(${plan.id})">解锁</button>`;
+                } else if (plan.is_locked && plan._originalData) {
+                    // 自己正在编辑的行
+                    html += `<button class="op-btn edit" onclick="saveRowEdit(${idx})" style="background:#10b981;color:white;">保存</button>`;
+                    html += `<button class="op-btn delete" onclick="cancelRowEdit(${idx})">取消</button>`;
+                }
+                html += `</td>`;
+                
+                html += `</tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // 计算合并信息
+        function calculateMerges(plans) {
+            const categoryMerges = [];
+            const projectMerges = [];
+            
+            let i = 0;
+            while (i < plans.length) {
+                // 类别合并
+                const currentCat = plans[i].category || '(无)';
+                let catCount = 1;
+                while (i + catCount < plans.length && (plans[i + catCount].category || '(无)') === currentCat) {
+                    catCount++;
+                }
+                for (let j = 0; j < catCount; j++) {
+                    categoryMerges.push({
+                        isStart: j === 0,
+                        rowspan: catCount
+                    });
+                }
+                i += catCount;
+            }
+            
+            // 项目合并（在类别内）
+            i = 0;
+            let catStart = 0;
+            while (i < plans.length) {
+                const currentCat = plans[i].category || '(无)';
+                let catCount = 0;
+                while (catStart + catCount < plans.length && (plans[catStart + catCount].category || '(无)') === currentCat) {
+                    catCount++;
+                }
+                
+                let j = 0;
+                while (j < catCount) {
+                    const currentProj = plans[catStart + j].project || '(无)';
+                    let projCount = 1;
+                    while (j + projCount < catCount && (plans[catStart + j + projCount].project || '(无)') === currentProj) {
+                        projCount++;
+                    }
+                    for (let k = 0; k < projCount; k++) {
+                        projectMerges.push({
+                            isStart: k === 0,
+                            rowspan: projCount
+                        });
+                    }
+                    j += projCount;
+                }
+                i += catCount;
+                catStart += catCount;
+            }
+            
+            return { category: categoryMerges, project: projectMerges };
+        }
+
+        // 选择单元格
+        function selectCell(td, idx, field, event) {
+            if (editingCell) return;
+            event.stopPropagation();
+            
+            document.querySelectorAll('.cell-selected').forEach(el => el.classList.remove('cell-selected'));
+            td.classList.add('cell-selected');
+            selectedRow = idx;
+            document.getElementById('editStatus').textContent = `已选中: ${field}`;
+        }
+
+        // 当前编辑行索引
+        let editingRowIdx = null;
+
+        // 开始行编辑
+        async function startRowEdit(idx) {
+            // 如果已有其他行在编辑，先取消
+            if (editingRowIdx !== null && editingRowIdx !== idx) {
+                cancelRowEdit(editingRowIdx);
+            }
+            // 如果本行已在编辑，不重复进入
+            if (editingRowIdx === idx) return;
+
+            const plan = filteredPlans[idx];
+            if (plan.is_locked) {
+                showSuccessMessage('此行已被锁定，无法编辑');
+                return;
+            }
+
+            editingRowIdx = idx;
+            const row = document.querySelector(`tr[data-idx="${idx}"]`);
+            if (!row) return;
+
+            // 字段与CSS class的映射
+            const fieldClassMap = {
+                'category': 'col-category',
+                'project': 'col-project',
+                'action_item': 'col-action',
+                'plan_source': 'col-source',
+                'deliverable': 'col-deliverable',
+                'group_id': 'col-group',
+                'responsible_id': 'col-responsible',
+                'plan_issue_date': 'col-issue-date',
+                'plan_deadline': 'col-deadline',
+                'current_progress': 'col-progress',
+                'status': 'col-status',
+                'remark': 'col-remark'
+            };
+
+            Object.entries(fieldClassMap).forEach(([field, className]) => {
+                const cell = row.querySelector(`td.${className}`);
+                if (!cell) return;
+                
+                const currentValue = plan[field] || '';
+                
+                if (field === 'group_id') {
+                    let html = '<select class="inline-select" name="edit_group_id" id="edit_group_id_' + idx + '">';
+                    html += '<option value="">-- 请选择 --</option>';
+                    allGroups.forEach(g => {
+                        const selected = g.id == plan.group_id ? 'selected' : '';
+                        html += `<option value="${g.id}" ${selected}>${g.group_name}</option>`;
+                    });
+                    html += '</select>';
+                    cell.innerHTML = html;
+                } else if (field === 'responsible_id') {
+                    let html = '<select class="inline-select" name="edit_responsible_id" id="edit_responsible_id_' + idx + '">';
+                    html += '<option value="">-- 请选择 --</option>';
+                    // 按当前所属组过滤责任人
+                    const currentGroupId = plan.group_id;
+                    const filteredMembers = currentGroupId ? allMembers.filter(m => m.group_id == currentGroupId) : allMembers;
+                    filteredMembers.forEach(m => {
+                        const selected = m.id == plan.responsible_id ? 'selected' : '';
+                        html += `<option value="${m.id}" ${selected}>${m.real_name}</option>`;
+                    });
+                    html += '</select>';
+                    cell.innerHTML = html;
+                } else if (field === 'status') {
+                    let html = `<select class="inline-select" name="edit_${field}">
+                        <option value="PENDING" ${plan.status === 'PENDING' ? 'selected' : ''}>待执行</option>
+                        <option value="IN_PROGRESS" ${plan.status === 'IN_PROGRESS' ? 'selected' : ''}>执行中</option>
+                        <option value="CLOSED" ${plan.status === 'CLOSED' ? 'selected' : ''}>已归零</option>
+                        <option value="CONTINUOUS" ${plan.status === 'CONTINUOUS' ? 'selected' : ''}>持续开展</option>
+                    </select>`;
+                    cell.innerHTML = html;
+                } else if (['plan_issue_date', 'plan_deadline'].includes(field)) {
+                    cell.innerHTML = `<input type="date" class="inline-input" name="edit_${field}" value="${currentValue}">`;
+                } else {
+                    cell.innerHTML = `<input type="text" class="inline-input" name="edit_${field}" value="${currentValue}">`;
+                }
+                
+                cell.classList.add('cell-editing');
+            });
+
+            // 所属组变更时过滤责任人下拉
+            const groupSelect = document.getElementById('edit_group_id_' + idx);
+            const responsibleSelect = document.getElementById('edit_responsible_id_' + idx);
+            if (groupSelect && responsibleSelect) {
+                groupSelect.addEventListener('change', function() {
+                    // 清空责任人，重新加载该组成员列表
+                    responsibleSelect.value = '';
+                    renderResponsibleSelect(responsibleSelect, null, this.value);
+                });
+                responsibleSelect.addEventListener('change', function() {
+                    updateGroupByResponsible(groupSelect, responsibleSelect);
+                });
+            }
+
+            // 替换操作列为保存/取消按钮
+            const opCell = row.querySelector('.col-operation');
+            opCell.innerHTML = `
+                <button class="op-btn edit" onclick="saveRowEdit(${idx})" style="background:#10b981;color:white;">保存</button>
+                <button class="op-btn delete" onclick="cancelRowEdit(${idx})">取消</button>
+            `;
+
+            // 记录原始数据用于取消
+            plan._originalData = { ...plan };
+            plan.is_locked = true;
+        }
+
+        // 列宽拖拽调整
+        function initColResize() {
+            const table = document.getElementById('excelTable');
+            if (!table) return;
+            const ths = table.querySelectorAll('thead th');
+            
+            ths.forEach((th, i) => {
+                const resizer = document.createElement('div');
+                resizer.className = 'col-resizer';
+                th.appendChild(resizer);
+                
+                let startX, startWidth;
+                
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startX = e.pageX;
+                    startWidth = th.offsetWidth;
+                    resizer.classList.add('resizing');
+                    
+                    const onMouseMove = (e) => {
+                        const diff = e.pageX - startX;
+                        const newWidth = Math.max(50, startWidth + diff);
+                        th.style.width = newWidth + 'px';
+                        th.style.minWidth = newWidth + 'px';
+                        // 同步数据列宽
+                        const className = th.className.split(' ')[0];
+                        if (className) {
+                            table.querySelectorAll(`td.${className}`).forEach(td => {
+                                td.style.width = newWidth + 'px';
+                                td.style.minWidth = newWidth + 'px';
+                            });
+                        }
+                    };
+                    
+                    const onMouseUp = () => {
+                        resizer.classList.remove('resizing');
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                    };
+                    
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+        }
+
+
+        // 新增行所属组变更时过滤责任人
+        function onNewRowGroupChange(groupSelectEl) {
+            const row = groupSelectEl.closest('tr');
+            const responsibleSelect = row.querySelector('[name="edit_responsible_id"]');
+            if (responsibleSelect) {
+                responsibleSelect.value = '';
+                renderResponsibleSelect(responsibleSelect, null, groupSelectEl.value);
+            }
+        }
+
+        // 保存行编辑
+        async function saveRowEdit(idx) {
+            const plan = filteredPlans[idx];
+            const row = document.querySelector(`tr[data-idx="${idx}"]`);
+            if (!row) return;
+
+            const fields = ['category', 'project', 'action_item', 'plan_source', 'deliverable', 'group_id', 'responsible_id', 'plan_issue_date', 'plan_deadline', 'current_progress', 'status', 'remark'];
+            
+            const updateData = {};
+            let hasError = false;
+            
+            fields.forEach(field => {
+                const input = row.querySelector(`[name="edit_${field}"]`);
+                if (input) {
+                    const value = input.value.trim();
+                    if (field === 'action_item' && !value) {
+                        input.classList.add('error');
+                        hasError = true;
+                    } else if (field === 'category' && !value) {
+                        input.classList.add('error');
+                        hasError = true;
+                    } else if (field === 'responsible_id' && !value) {
+                        input.classList.add('error');
+                        hasError = true;
+                    } else if (field === 'group_id' && !value) {
+                        input.classList.add('error');
+                        hasError = true;
+                    }
+                    updateData[field] = value;
+                }
+            });
+
+            if (hasError) {
+                showSuccessMessage('请填写必填字段（类别、所属组、责任人）');
+                return;
+            }
+
+            try {
+                const updateRes = await apiRequest(`${API_BASE}/plans/${plan.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+
+                if (updateRes.code === 200) {
+                    showSuccessMessage('保存成功');
+                    recordAction(plan.id, 'row_edit', plan._originalData, updateData);
+                    editingRowIdx = null;
+                    loadPlans(currentPage);
+                } else {
+                    showSuccessMessage('保存失败: ' + (updateRes.message || '未知错误'));
+                }
+            } catch (e) {
+                showSuccessMessage('保存失败: ' + e.message);
+            }
+        }
+
+        // 取消行编辑
+        async function cancelRowEdit(idx) {
+            const plan = filteredPlans[idx];
+            
+            // 恢复原始数据
+            if (plan._originalData) {
+                Object.assign(plan, plan._originalData);
+                delete plan._originalData;
+            }
+            plan.is_locked = false;
+            editingRowIdx = null;
+            
+            renderTable();
+        }
+
+        // 双击编辑
+        document.addEventListener('dblclick', async function(e) {
+            const cell = e.target.closest('td');
+            if (!cell || cell.classList.contains('col-seq') || cell.classList.contains('col-operation')) return;
+            
+            const row = cell.closest('tr');
+            if (!row) return;
+            
+            const idx = parseInt(row.dataset.idx);
+            if (isNaN(idx)) return;
+            
+            const plan = filteredPlans[idx];
+            if (!plan) return;
+            
+            if (plan.is_locked && !plan._originalData) {
+                showSuccessMessage('此行已被锁定');
+                return;
+            }
+
+            await startRowEdit(idx);
+        });
+
+        // 添加新行
+        function addNewRow() {
+            if (isAddingNew) {
+                showSuccessMessage('请先保存或取消当前新增行');
+                return;
+            }
+
+            isAddingNew = true;
+            
+            const newPlan = {
+                id: 'new_' + Date.now(),
+                _isNew: true,
+                category: '',
+                project: '',
+                action_item: '',
+                plan_source: '',
+                deliverable: '',
+                responsible_id: currentUser.role === 'MEMBER' ? currentUser.id : '',
+                responsible_name: currentUser.role === 'MEMBER' ? (currentUser.real_name || currentUser.username) : '',
+                plan_issue_date: '',
+                plan_deadline: '',
+                current_progress: '',
+                status: 'PENDING',
+                remark: ''
+            };
+
+            filteredPlans.unshift(newPlan);
+            renderTable();
+            
+            // 聚焦到第一个可编辑单元格
+            setTimeout(() => {
+                const firstInput = document.querySelector('input[name="edit_category"]');
+                if (firstInput) firstInput.focus();
+            }, 100);
+
+            updateStatusBar();
+            updateLastActionTime('新增行');
+        }
+
+        // 取消新行
+        function cancelNewRow() {
+            if (!isAddingNew) return;
+            isAddingNew = false;
+            filteredPlans = filteredPlans.filter(p => !p._isNew);
+            renderTable();
+            updateStatusBar();
+        }
+
+        // 保存新行
+        async function saveNewRow() {
+            const newPlan = filteredPlans.find(p => p._isNew);
+            if (!newPlan) return;
+
+            const row = document.querySelector('tr.new-row');
+            if (!row) return;
+
+            // 收集数据
+            const category = row.querySelector('[name="edit_category"]')?.value?.trim() || '';
+            const project = row.querySelector('[name="edit_project"]')?.value?.trim() || '';
+            const action_item = row.querySelector('[name="edit_action_item"]')?.value?.trim() || '';
+            const plan_source = row.querySelector('[name="edit_plan_source"]')?.value?.trim() || '';
+            const deliverable = row.querySelector('[name="edit_deliverable"]')?.value?.trim() || '';
+            const group_id = row.querySelector('[name="edit_group_id"]')?.value || '';
+            const responsible_id = row.querySelector('[name="edit_responsible_id"]')?.value || (currentUser.role === 'MEMBER' ? currentUser.id : '');
+            const plan_issue_date = row.querySelector('[name="edit_plan_issue_date"]')?.value || '';
+            const plan_deadline = row.querySelector('[name="edit_plan_deadline"]')?.value || '';
+            const current_progress = row.querySelector('[name="edit_current_progress"]')?.value?.trim() || '';
+            const status = row.querySelector('[name="edit_status"]')?.value || 'PENDING';
+            const remark = row.querySelector('[name="edit_remark"]')?.value?.trim() || '';
+
+            // 验证
+            let hasError = false;
+            if (!category) {
+                const input = row.querySelector('[name="edit_category"]');
+                if (input) input.classList.add('error');
+                hasError = true;
+            }
+            if (!action_item) {
+                const input = row.querySelector('[name="edit_action_item"]');
+                if (input) input.classList.add('error');
+                hasError = true;
+            }
+            if (!responsible_id) {
+                const input = row.querySelector('[name="edit_responsible_id"]');
+                if (input) input.classList.add('error');
+                hasError = true;
+            }
+
+            if (hasError) {
+                showSuccessMessage('请填写必填字段（类别、行动项、责任人）');
+                return;
+            }
+
+            const planData = {
+                category,
+                project,
+                action_item,
+                plan_source,
+                deliverable,
+                group_id: group_id ? parseInt(group_id) : null,
+                responsible_id,
+                plan_issue_date,
+                plan_deadline,
+                current_progress,
+                status,
+                remark
+            };
+
+            try {
+                const data = await apiRequest(`${API_BASE}/plans`, {
+                    method: 'POST',
+                    body: JSON.stringify(planData)
+                });
+
+                if (data.code === 200) {
+                    showSuccessMessage('计划创建成功');
+                    isAddingNew = false;
+                    loadPlans(1);
+                } else {
+                    showSuccessMessage('创建失败: ' + (data.message || '未知错误'));
+                }
+            } catch (e) {
+                showSuccessMessage('创建失败: ' + e.message);
+            }
+        }
+
+        // 完成编辑
+        async function finishEditing(save = false) {
+            if (!editingCell) return;
+            
+            const td = editingCell;
+            const idx = parseInt(td.dataset.idx);
+            const field = td.dataset.field;
+            const plan = filteredPlans[idx];
+            
+            const input = td.querySelector('input, select');
+            if (!input) return;
+            
+            const newValue = input.value;
+            const oldValue = plan[field];
+            
+            td.classList.remove('cell-editing');
+            td.textContent = newValue || '-';
+            td.classList.remove('cell-selected');
+            
+            editingCell = null;
+            
+            if (save && newValue !== oldValue) {
+                recordAction(plan.id, field, oldValue, newValue);
+            }
+        }
+
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterOverdue').value = '';
+            loadPlans(1);
+        }
+
+        // 删除相关
+        function openDeleteModal(id) {
+            deletePlanId = id;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            deletePlanId = null;
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+
+        async function confirmDelete() {
+            if (!deletePlanId) return;
+            try {
+                const data = await apiRequest(`${API_BASE}/plans/${deletePlanId}`, { method: 'DELETE' });
+                if (data.code === 200) {
+                    showSuccessMessage('删除成功');
+                    loadPlans(currentPage);
+                } else {
+                    showSuccessMessage('删除失败: ' + (data.message || '未知错误'));
+                }
+            } catch (e) {
+                showSuccessMessage('删除失败');
+            }
+            closeDeleteModal();
+        }
+
+        // 手动解锁
+        async function manualUnlock(id) {
+            if (!confirm('确定要强制解锁此计划吗？')) return;
+            try {
+                const data = await apiRequest(`${API_BASE}/plans/manual-unlock/${id}`, { method: 'POST' });
+                if (data.code === 200) {
+                    showSuccessMessage(data.message || '解锁成功');
+                    loadPlans(currentPage);
+                } else {
+                    showSuccessMessage('解锁失败: ' + (data.message || '未知错误'));
+                }
+            } catch (e) {
+                showSuccessMessage('解锁失败');
+            }
+        }
+
+        // 右键菜单
+        document.addEventListener('contextmenu', function(e) {
+            const cell = e.target.closest('td');
+            if (!cell || cell.classList.contains('row-number')) return;
+            
+            const row = cell.closest('tr');
+            if (!row) return;
+            
+            e.preventDefault();
+            contextRowIndex = parseInt(row.dataset.idx);
+            
+            const menu = document.getElementById('contextMenu');
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+            menu.classList.add('show');
+        });
+
+        document.addEventListener('click', function() {
+            document.getElementById('contextMenu').classList.remove('show');
+        });
+
+        function insertRowAbove() {
+            if (contextRowIndex < 0) return;
+            if (isAddingNew) {
+                showSuccessMessage('请先完成当前新增操作');
+                return;
+            }
+            
+            const newPlan = {
+                id: 'new_' + Date.now(),
+                _isNew: true,
+                category: filteredPlans[contextRowIndex]?.category || '',
+                project: '',
+                action_item: '',
+                plan_source: '',
+                deliverable: '',
+                responsible_id: currentUser.role === 'MEMBER' ? currentUser.id : '',
+                responsible_name: currentUser.role === 'MEMBER' ? (currentUser.real_name || currentUser.username) : '',
+                plan_issue_date: '',
+                plan_deadline: '',
+                current_progress: '',
+                status: 'PENDING',
+                remark: ''
+            };
+            
+            filteredPlans.splice(contextRowIndex, 0, newPlan);
+            isAddingNew = true;
+            renderTable();
+            updateStatusBar();
+            
+            setTimeout(() => {
+                const firstInput = document.querySelector('tr[data-idx="' + contextRowIndex + '"] input[name="edit_action_item"]');
+                if (firstInput) firstInput.focus();
+            }, 100);
+            
+            updateLastActionTime('插入行(上)');
+        }
+
+        function insertRowBelow() {
+            if (contextRowIndex < 0) return;
+            if (isAddingNew) {
+                showSuccessMessage('请先完成当前新增操作');
+                return;
+            }
+            
+            const newPlan = {
+                id: 'new_' + Date.now(),
+                _isNew: true,
+                category: filteredPlans[contextRowIndex]?.category || '',
+                project: '',
+                action_item: '',
+                plan_source: '',
+                deliverable: '',
+                responsible_id: currentUser.role === 'MEMBER' ? currentUser.id : '',
+                responsible_name: currentUser.role === 'MEMBER' ? (currentUser.real_name || currentUser.username) : '',
+                plan_issue_date: '',
+                plan_deadline: '',
+                current_progress: '',
+                status: 'PENDING',
+                remark: ''
+            };
+            
+            filteredPlans.splice(contextRowIndex + 1, 0, newPlan);
+            isAddingNew = true;
+            renderTable();
+            updateStatusBar();
+            
+            setTimeout(() => {
+                const firstInput = document.querySelector('tr[data-idx="' + (contextRowIndex + 1) + '"] input[name="edit_action_item"]');
+                if (firstInput) firstInput.focus();
+            }, 100);
+            
+            updateLastActionTime('插入行(下)');
+        }
+
+        function editCurrentRow() {
+            if (contextRowIndex < 0) return;
+            startRowEdit(contextRowIndex);
+        }
+
+        function deleteSelectedRow() {
+            if (contextRowIndex < 0) return;
+            const plan = filteredPlans[contextRowIndex];
+            if (plan._isNew) {
+                cancelNewRow();
+                return;
+            }
+            openDeleteModal(plan.id);
+        }
+
+        // 更新状态栏
+        function updateStatusBar() {
+            document.getElementById('totalCount').textContent = allPlans.length;
+            document.getElementById('currentCount').textContent = filteredPlans.length;
+        }
+
+        // 状态名称
+        function getStatusName(status) {
+            const names = { 'PENDING': '待执行', 'IN_PROGRESS': '执行中', 'CLOSED': '已归零', 'CONTINUOUS': '持续开展' };
+            return names[status] || status;
+        }
+
+        // 通知面板
+        function toggleNotification() {
+            const panel = document.getElementById('notifPanel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                loadNotifications();
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const data = await apiRequest(`${API_BASE}/notifications`);
+                const list = data.data?.list || [];
+                const notifList = document.getElementById('notifList');
+                if (list.length === 0) {
+                    notifList.innerHTML = '<div class="notification-empty">暂无通知</div>';
+                } else {
+                    notifList.innerHTML = list.map(n => `
+                        <div class="notification-item" onclick="markRead(${n.id})">
+                            <div class="notification-icon">
+                                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-text"><strong>${n.title}</strong><br>${n.content || ''}</div>
+                                <div class="notification-time">${formatTime(n.create_time)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                document.getElementById('notifList').innerHTML = '<div class="notification-empty">加载失败</div>';
+            }
+        }
+
+        async function markRead(id) {
+            try {
+                await apiRequest(`${API_BASE}/notifications/${id}/read`, { method: 'PUT' });
+                loadNotificationCount();
+                loadNotifications();
+            } catch (e) {}
+        }
+
+        async function markAllRead() {
+            try {
+                await apiRequest(`${API_BASE}/notifications/read-all`, { method: 'PUT' });
+                loadNotificationCount();
+                loadNotifications();
+            } catch (e) {}
+        }
+
+        function formatTime(time) {
+            if (!time) return '';
+            const d = new Date(time);
+            const now = new Date();
+            const diff = now - d;
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            return d.toLocaleDateString();
+        }
+
+        // 登出
+        function logout() {
+            const token = sessionStorage.getItem('token');
+            if (token) {
+                fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).catch(() => {});
+            }
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // ESC取消编辑
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (isAddingNew) {
+                    cancelNewRow();
+                }
+                if (editingCell) {
+                    editingCell.classList.remove('cell-editing');
+                    editingCell.classList.remove('cell-selected');
+                    editingCell = null;
+                }
+            }
+            if (e.key === 'Enter' && e.ctrlKey) {
+                saveCurrentEdit();
+            }
+        });
+
+        // 点击其他地方关闭通知面板
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('notifPanel');
+            const btn = document.querySelector('.notification-btn');
+            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        });
+
+        // 初始化
+        init();
+    </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

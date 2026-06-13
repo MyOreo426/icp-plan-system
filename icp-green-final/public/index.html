@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - 计划管理系统</title>
+    <script src="echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        /* 导航栏 - 与plan-list.html一致 */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo svg { width: 24px; height: 24px; fill: white; }
+        .system-title { color: white; font-size: 18px; font-weight: 600; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .nav-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .nav-btn.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
+        .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+
+        /* 通知按钮 */
+        .notification-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .notification-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .notification-btn svg { width: 22px; height: 22px; fill: white; }
+
+        /* 用户信息 */
+        .user-info { display: flex; align-items: center; gap: 10px; color: white; }
+        .user-avatar {
+            width: 36px; height: 36px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .user-name { font-size: 14px; }
+        .user-role {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* Main Content */
+        .main-content {
+            padding-top: 76px;
+            padding-bottom: 24px;
+            min-height: 100vh;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .loading-overlay.hidden { display: none; }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e8ecf1;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 0 24px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.25s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+        .stat-card.overdue { background: #fef2f2; border-left: 4px solid #ef4444; }
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-icon.green { background: linear-gradient(135deg, #34d399, #10b981); }
+        .stat-icon.orange { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .stat-icon.red { background: linear-gradient(135deg, #f87171, #ef4444); }
+        .stat-info { flex: 1; }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.2;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .stat-change {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 6px;
+            display: inline-block;
+        }
+        .stat-change.up { background: #dcfce7; color: #16a34a; }
+        .stat-change.down { background: #fee2e2; color: #dc2626; }
+        .stat-change.neutral { background: #f3f4f6; color: #6b7280; }
+
+        /* Chart Grid */
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 0 24px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .chart-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .chart-wrapper { height: 260px; position: relative; }
+        .chart-wrapper.no-data::after {
+            content: '暂无数据';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* Warning List */
+        .warning-list {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .warning-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            gap: 12px;
+        }
+        .warning-item:last-child { border-bottom: none; }
+        .warning-item:hover { background: #f9fafb; }
+        .warning-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .warning-badge.red { background: #fee2e2; color: #dc2626; }
+        .warning-badge.orange { background: #ffedd5; color: #ea580c; }
+        .warning-content { flex: 1; min-width: 0; }
+        .warning-title {
+            font-size: 13px;
+            color: #374151;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .warning-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        .warning-date {
+            font-size: 12px;
+            color: #6b7280;
+            flex-shrink: 0;
+        }
+        .no-warning {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-container { grid-template-columns: repeat(2, 1fr); }
+            .chart-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-container { grid-template-columns: repeat(2, 1fr); padding: 0 16px 16px; }
+            .chart-container { grid-template-columns: 1fr; padding: 0 16px 16px; }
+            .stat-card { padding: 16px; }
+            .stat-icon { width: 44px; height: 44px; font-size: 20px; }
+            .stat-value { font-size: 22px; }
+        }
+        @media (max-width: 480px) {
+            .stats-container { grid-template-columns: 1fr; }
+        }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </div>
+            <span class="system-title">计划管理系统</span>
+            <div class="nav-divider"></div>
+            <a href="index.html" class="nav-btn active" id="dashboardNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                仪表盘
+            </a>
+            <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                用户管理
+            </a>
+            <a href="admin.html?tab=groups" class="nav-btn" id="groupNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                小组管理
+            </a>
+            <a href="plan-list.html" class="nav-btn" id="planListNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                重点任务列表
+            </a>
+            <a href="plan-list-excel.html" class="nav-btn" id="planExcelNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
+                重点任务列表（表格版）
+            </a>
+            <a href="import-export.html" class="nav-btn" id="importExportNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                导入导出
+            </a>
+            <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                操作日志
+            </a>
+        </div>
+        <div class="navbar-right">
+            <button class="notification-btn" id="notifBtn">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            </button>
+            <div class="user-info">
+                <div class="user-avatar" id="avatar">👤</div>
+                <span class="user-name" id="userName">加载中...</span>
+                <span class="user-role" id="userRole">--</span>
+            </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
+            <button class="logout-btn" id="logoutBtn">退出</button>
+        </div>
+    </nav>
+
+    <div class="main-content" id="mainContent">
+        <!-- Loading -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card" id="statTotal">
+                <div class="stat-icon blue">📋</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="totalPlans">0</div>
+                    <div class="stat-label">总计划数</div>
+                    <div class="stat-change neutral" id="totalChange">--</div>
+                </div>
+            </div>
+            <div class="stat-card" id="statInProgress">
+                <div class="stat-icon green">🔄</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="inProgressPlans">0</div>
+                    <div class="stat-label">执行中</div>
+                    <div class="stat-change neutral" id="progressChange">--</div>
+                </div>
+            </div>
+            <div class="stat-card" id="statOverdue">
+                <div class="stat-icon red">⚠️</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="overduePlans">0</div>
+                    <div class="stat-label">超期数</div>
+                    <div class="stat-change neutral" id="overdueChange">--</div>
+                </div>
+            </div>
+            <div class="stat-card" id="statMonthly">
+                <div class="stat-icon orange">📈</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="monthlyPlans">0</div>
+                    <div class="stat-label">本月新增</div>
+                    <div class="stat-change neutral" id="monthlyChange">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section Row 1 -->
+        <div class="chart-container">
+            <div class="chart-card">
+                <div class="chart-title">计划状态分布</div>
+                <div class="chart-wrapper" id="chartStatus"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">各组计划数量</div>
+                <div class="chart-wrapper" id="chartGroup"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">类别分布</div>
+                <div class="chart-wrapper" id="chartCategory"></div>
+            </div>
+        </div>
+
+        <!-- Chart Section Row 2 -->
+        <div class="chart-container">
+            <div class="chart-card">
+                <div class="chart-title">各组完成情况</div>
+                <div class="chart-wrapper" id="chartGroupStatus"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">月度趋势</div>
+                <div class="chart-wrapper" id="chartTrend"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">即将到期预警</div>
+                <div class="warning-list" id="warningList"></div>
+            </div>
+        </div>
+
+        <!-- Module Cards - 已移除，改用导航栏切换 -->
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const STATUS_MAP = { PENDING: '待执行', IN_PROGRESS: '执行中', CLOSED: '已归零', CONTINUOUS: '持续开展' };
+        const STATUS_COLORS = { PENDING: '#94a3b8', IN_PROGRESS: '#3b82f6', CLOSED: '#10b981', CONTINUOUS: '#8b5cf6' };
+        const ROLE_MAP = { ADMIN: '管理员', LEADER: '组长', MEMBER: '组员', DIRECTOR: '主任' };
+        const ROLE_EMOJI = { ADMIN: '⚙️', LEADER: '👥', MEMBER: '👤', DIRECTOR: '🏢' };
+
+        let currentUser = null;
+        let allPlans = [];
+        let chartInstances = {};
+
+        // Auth check
+        function checkAuth() {
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return JSON.parse(userStr);
+        }
+
+        // Role emoji
+        function getRoleEmoji(r) { return ROLE_EMOJI[r] || '👤'; }
+
+        // Logout
+        function logout() {
+            const token = sessionStorage.getItem('token');
+            if (token) {
+                fetch(`${API_BASE}/auth/logout`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+            }
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Get auth headers
+        function getHeaders() {
+            return { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` };
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            if (!dateStr) return '--';
+            const d = new Date(dateStr);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        // Get month key from date
+        function getMonthKey(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        // Calculate days remaining
+        function getDaysRemaining(deadline) {
+            if (!deadline) return null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const deadlineDate = new Date(deadline);
+            deadlineDate.setHours(0, 0, 0, 0);
+            const diff = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+            return diff;
+        }
+
+        // Fetch plans
+        async function fetchPlans() {
+            try {
+                const res = await fetch(`${API_BASE}/plans?page=1&pageSize=999`, { headers: getHeaders() });
+                if (res.status === 401) {
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                    return [];
+                }
+                const data = await res.json();
+                if (data.code === 200) {
+                    return data.data.list || [];
+                }
+            } catch (e) {
+                console.error('Failed to fetch plans:', e);
+            }
+            return [];
+        }
+
+        // Calculate stats（API已按角色过滤，无需前端再过滤）
+        function calculateStats(plans) {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            const total = plans.length;
+            const inProgress = plans.filter(p => p.status === 'IN_PROGRESS').length;
+            const overdue = plans.filter(p => p.is_overdue === 1).length;
+            const monthly = plans.filter(p => getMonthKey(p.create_time) === currentMonth).length;
+
+            return { total, inProgress, overdue, monthly };
+        }
+
+        // Status distribution
+        function getStatusDistribution(plans) {
+            const dist = { PENDING: 0, IN_PROGRESS: 0, CLOSED: 0, CONTINUOUS: 0 };
+            plans.forEach(p => {
+                if (dist.hasOwnProperty(p.status)) dist[p.status]++;
+            });
+            return dist;
+        }
+
+        // Group distribution
+        function getGroupDistribution(plans) {
+            const groups = {};
+            plans.forEach(p => {
+                const name = p.group_name || '未分组';
+                groups[name] = (groups[name] || 0) + 1;
+            });
+            return groups;
+        }
+
+        // Category distribution
+        function getCategoryDistribution(plans) {
+            const categories = {};
+            plans.forEach(p => {
+                const cat = p.category || '未分类';
+                categories[cat] = (categories[cat] || 0) + 1;
+            });
+            return categories;
+        }
+
+        // Group status distribution
+        function getGroupStatusDistribution(plans) {
+            const groups = {};
+            plans.forEach(p => {
+                const name = p.group_name || '未分组';
+                if (!groups[name]) {
+                    groups[name] = { PENDING: 0, IN_PROGRESS: 0, CLOSED: 0, CONTINUOUS: 0 };
+                }
+                if (groups[name].hasOwnProperty(p.status)) {
+                    groups[name][p.status]++;
+                }
+            });
+            return groups;
+        }
+
+        // Monthly trend
+        function getMonthlyTrend(plans) {
+            const now = new Date();
+            const months = [];
+            
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                months.push({ key, label: `${d.getMonth() + 1}月`, created: 0, overdue: 0 });
+            }
+
+            plans.forEach(p => {
+                const monthKey = getMonthKey(p.create_time);
+                const monthData = months.find(m => m.key === monthKey);
+                if (monthData) {
+                    monthData.created++;
+                    if (p.is_overdue === 1) monthData.overdue++;
+                }
+            });
+
+            return months;
+        }
+
+        // Warning list (7 days)
+        function getWarningList(plans) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const sevenDaysLater = new Date(now);
+            sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+            return plans
+                .filter(p => {
+                    if (p.status === 'CLOSED' || p.status === 'CONTINUOUS') return false;
+                    if (!p.plan_deadline) return false;
+                    const deadline = new Date(p.plan_deadline);
+                    return deadline >= now && deadline <= sevenDaysLater;
+                })
+                .map(p => ({
+                    ...p,
+                    daysRemaining: getDaysRemaining(p.plan_deadline)
+                }))
+                .sort((a, b) => a.daysRemaining - b.daysRemaining)
+                .slice(0, 10);
+        }
+
+        // Init charts
+        function initCharts() {
+            chartInstances.status = echarts.init(document.getElementById('chartStatus'));
+            chartInstances.group = echarts.init(document.getElementById('chartGroup'));
+            chartInstances.category = echarts.init(document.getElementById('chartCategory'));
+            chartInstances.groupStatus = echarts.init(document.getElementById('chartGroupStatus'));
+            chartInstances.trend = echarts.init(document.getElementById('chartTrend'));
+        }
+
+        // Render status pie chart
+        function renderStatusChart(dist) {
+            const data = Object.entries(dist).map(([status, value]) => ({
+                name: STATUS_MAP[status],
+                value: value,
+                itemStyle: { color: STATUS_COLORS[status] }
+            }));
+
+            const option = {
+                tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                legend: {
+                    orient: 'vertical',
+                    right: '5%',
+                    top: 'center',
+                    itemWidth: 12,
+                    itemHeight: 12,
+                    textStyle: { fontSize: 12 }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false },
+                    emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+                    data: data
+                }]
+            };
+            
+            chartInstances.status.setOption(option);
+            const hasData = data.some(d => d.value > 0);
+            document.getElementById('chartStatus').classList.toggle('no-data', !hasData);
+
+            // 双击跳转：按状态筛选
+            chartInstances.status.on('dblclick', function(params) {
+                if (params.data && params.data.name) {
+                    const statusMap = {'待执行': 'PENDING', '执行中': 'IN_PROGRESS', '已归零': 'CLOSED', '持续开展': 'CONTINUOUS'};
+                    const status = statusMap[params.data.name];
+                    if (status) window.location.href = 'plan-list.html?status=' + status;
+                }
+            });
+        }
+
+        // Render group bar chart
+        function renderGroupChart(dist) {
+            const sortedEntries = Object.entries(dist).sort((a, b) => b[1] - a[1]);
+            const categories = sortedEntries.map(e => e[0]);
+            const values = sortedEntries.map(e => e[1]);
+
+            const colors = ['#667eea', '#764ba2', '#34d399', '#f59e0b', '#f87171', '#22d3ee', '#a78bfa', '#fb923c'];
+
+            const option = {
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', top: '8%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: categories,
+                    axisLabel: { rotate: categories.length > 4 ? 30 : 0, fontSize: 11 }
+                },
+                yAxis: { type: 'value', axisLabel: { fontSize: 11 } },
+                series: [{
+                    type: 'bar',
+                    data: values.map((v, i) => ({
+                        value: v,
+                        itemStyle: { color: colors[i % colors.length], borderRadius: [4, 4, 0, 0] }
+                    })),
+                    barWidth: '50%',
+                    label: { show: true, position: 'top', fontSize: 11 }
+                }]
+            };
+
+            chartInstances.group.setOption(option);
+            document.getElementById('chartGroup').classList.toggle('no-data', categories.length === 0);
+
+            // 双击跳转：按小组筛选（暂不支持，后端无group_name筛选参数，跳转全部列表）
+            chartInstances.group.on('dblclick', function(params) {
+                window.location.href = 'plan-list.html';
+            });
+        }
+
+        // Render category horizontal bar chart
+        function renderCategoryChart(dist) {
+            const sortedEntries = Object.entries(dist).sort((a, b) => b[1] - a[1]);
+            const categories = sortedEntries.map(e => e[0]);
+            const values = sortedEntries.map(e => e[1]);
+
+            const option = {
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '15%', bottom: '3%', top: '3%', containLabel: true },
+                xAxis: { type: 'value', axisLabel: { fontSize: 11 } },
+                yAxis: { type: 'category', data: categories, axisLabel: { fontSize: 11 } },
+                series: [{
+                    type: 'bar',
+                    data: values,
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#667eea' },
+                            { offset: 1, color: '#764ba2' }
+                        ]),
+                        borderRadius: [0, 4, 4, 0]
+                    },
+                    barWidth: '60%',
+                    label: { show: true, position: 'right', fontSize: 11 }
+                }]
+            };
+
+            chartInstances.category.setOption(option);
+            document.getElementById('chartCategory').classList.toggle('no-data', categories.length === 0);
+
+            // 双击跳转：按类别筛选
+            chartInstances.category.on('dblclick', function(params) {
+                if (params.name) {
+                    window.location.href = 'plan-list.html?category=' + encodeURIComponent(params.name);
+                }
+            });
+        }
+
+        // Render group status stacked bar chart
+        function renderGroupStatusChart(groupDist) {
+            const groups = Object.keys(groupDist);
+            const statuses = ['PENDING', 'IN_PROGRESS', 'CLOSED', 'CONTINUOUS'];
+
+            const series = statuses.map(status => ({
+                name: STATUS_MAP[status],
+                type: 'bar',
+                stack: 'total',
+                data: groups.map(g => groupDist[g][status] || 0),
+                itemStyle: { color: STATUS_COLORS[status], borderRadius: status === 'CONTINUOUS' ? [0, 4, 4, 0] : (status === 'PENDING' ? [4, 0, 0, 4] : 0) },
+                barWidth: '50%'
+            }));
+
+            const option = {
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                legend: {
+                    data: statuses.map(s => STATUS_MAP[s]),
+                    bottom: 0,
+                    itemWidth: 12,
+                    itemHeight: 12,
+                    textStyle: { fontSize: 11 }
+                },
+                grid: { left: '3%', right: '4%', bottom: '15%', top: '5%', containLabel: true },
+                xAxis: { type: 'category', data: groups, axisLabel: { rotate: groups.length > 4 ? 30 : 0, fontSize: 11 } },
+                yAxis: { type: 'value', axisLabel: { fontSize: 11 } },
+                series: series
+            };
+
+            chartInstances.groupStatus.setOption(option);
+            document.getElementById('chartGroupStatus').classList.toggle('no-data', groups.length === 0);
+
+            // 双击跳转：按小组+状态筛选
+            chartInstances.groupStatus.on('dblclick', function(params) {
+                if (params.seriesName) {
+                    const statusMap = {'待执行': 'PENDING', '执行中': 'IN_PROGRESS', '已归零': 'CLOSED', '持续开展': 'CONTINUOUS'};
+                    const status = statusMap[params.seriesName];
+                    if (status) window.location.href = 'plan-list.html?status=' + status;
+                }
+            });
+        }
+
+        // Render trend line chart
+        function renderTrendChart(months) {
+            const option = {
+                tooltip: { trigger: 'axis' },
+                legend: {
+                    data: ['新增计划', '超期计划'],
+                    bottom: 0,
+                    itemWidth: 12,
+                    itemHeight: 12,
+                    textStyle: { fontSize: 11 }
+                },
+                grid: { left: '3%', right: '4%', bottom: '15%', top: '5%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: months.map(m => m.label),
+                    axisLabel: { fontSize: 11 }
+                },
+                yAxis: { type: 'value', axisLabel: { fontSize: 11 } },
+                series: [
+                    {
+                        name: '新增计划',
+                        type: 'line',
+                        data: months.map(m => m.created),
+                        smooth: true,
+                        lineStyle: { width: 2 },
+                        itemStyle: { color: '#667eea' },
+                        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(102,126,234,0.3)' },
+                            { offset: 1, color: 'rgba(102,126,234,0.05)' }
+                        ]) },
+                        label: { show: true, fontSize: 10 }
+                    },
+                    {
+                        name: '超期计划',
+                        type: 'line',
+                        data: months.map(m => m.overdue),
+                        smooth: true,
+                        lineStyle: { width: 2 },
+                        itemStyle: { color: '#ef4444' },
+                        label: { show: true, fontSize: 10 }
+                    }
+                ]
+            };
+
+            chartInstances.trend.setOption(option);
+            const hasData = months.some(m => m.created > 0 || m.overdue > 0);
+            document.getElementById('chartTrend').classList.toggle('no-data', !hasData);
+
+            // 双击跳转：按超期筛选
+            chartInstances.trend.on('dblclick', function(params) {
+                if (params.seriesName === '超期') {
+                    window.location.href = 'plan-list.html?is_overdue=1';
+                } else {
+                    window.location.href = 'plan-list.html';
+                }
+            });
+        }
+
+        // Render warning list
+        function renderWarningList(warnings) {
+            const container = document.getElementById('warningList');
+            
+            if (warnings.length === 0) {
+                container.innerHTML = '<div class="no-warning">🎉 暂无即将到期的计划</div>';
+                return;
+            }
+
+            container.innerHTML = warnings.map(w => {
+                const isRed = w.daysRemaining <= 3;
+                const isOrange = w.daysRemaining > 3 && w.daysRemaining <= 7;
+                const badgeClass = isRed ? 'red' : 'orange';
+                const daysText = isRed ? `剩余${w.daysRemaining}天` : `${w.daysRemaining}天后`;
+                
+                return `
+                    <div class="warning-item">
+                        <span class="warning-badge ${badgeClass}">${daysText}</span>
+                        <div class="warning-content">
+                            <div class="warning-title" title="${w.action_item || ''}">${w.action_item || '未填写'}</div>
+                            <div class="warning-meta">${w.responsible_name || '未指定'}</div>
+                        </div>
+                        <div class="warning-date">${formatDate(w.plan_deadline)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update UI with stats
+        function updateStats(stats) {
+            document.getElementById('totalPlans').textContent = stats.total;
+            document.getElementById('inProgressPlans').textContent = stats.inProgress;
+            document.getElementById('overduePlans').textContent = stats.overdue;
+            document.getElementById('monthlyPlans').textContent = stats.monthly;
+
+            // Highlight overdue card if > 0
+            const overdueCard = document.getElementById('statOverdue');
+            if (stats.overdue > 0) {
+                overdueCard.classList.add('overdue');
+            } else {
+                overdueCard.classList.remove('overdue');
+            }
+        }
+
+        // Main init
+        async function init() {
+            currentUser = checkAuth();
+            if (!currentUser) return;
+
+            // Update user info
+            document.getElementById('userName').textContent = currentUser.real_name || currentUser.username;
+            document.getElementById('userRole').textContent = ROLE_MAP[currentUser.role] || currentUser.role;
+            document.getElementById('avatar').textContent = getRoleEmoji(currentUser.role);
+
+            // 根据角色显示/隐藏导航按钮（权限控制）
+            if (currentUser.role === 'ADMIN') {
+                // 管理员：只显示用户管理、小组管理、操作日志
+                document.getElementById('dashboardNavBtn').style.display = 'none';
+                document.getElementById('planListNavBtn').style.display = 'none';
+                document.getElementById('planExcelNavBtn').style.display = 'none';
+                document.getElementById('importExportNavBtn').style.display = 'none';
+                document.getElementById('logNavBtn').style.display = 'flex';
+                document.getElementById('adminNavBtn').style.display = 'flex';
+                document.getElementById('groupNavBtn').style.display = 'flex';
+            } else if (['LEADER', 'DIRECTOR'].includes(currentUser.role)) {
+                // 主任/组长：显示操作日志
+                document.getElementById('logNavBtn').style.display = 'flex';
+            }
+            // MEMBER：默认显示重点任务列表、表格版和导入导出，无需额外操作
+            // 仪表盘对所有角色可见，已在HTML中设置，无需隐藏
+
+            // Bind events - 使用addEventListener（CSP兼容）
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('notifBtn').addEventListener('click', function() {
+                location.href = 'plan-list.html';
+            });
+
+            // Init charts (guard if ECharts CDN failed to load)
+            if (typeof echarts !== 'undefined') {
+                initCharts();
+            } else {
+                console.warn('ECharts not loaded, charts disabled');
+            }
+
+            // Fetch and render data
+            try {
+                const plans = await fetchPlans();
+                allPlans = plans;
+
+                // Calculate and update stats
+                const stats = calculateStats(plans);
+                updateStats(stats);
+
+                // Calculate chart data
+                const statusDist = getStatusDistribution(plans);
+                const groupDist = getGroupDistribution(plans);
+                const categoryDist = getCategoryDistribution(plans);
+                const groupStatusDist = getGroupStatusDistribution(plans);
+                const monthlyTrend = getMonthlyTrend(plans);
+                const warningList = getWarningList(plans);
+
+                // Render charts (only if ECharts available)
+                if (typeof echarts !== 'undefined') {
+                    renderStatusChart(statusDist);
+                    renderGroupChart(groupDist);
+                    renderCategoryChart(categoryDist);
+                    renderGroupStatusChart(groupStatusDist);
+                    renderTrendChart(monthlyTrend);
+                }
+                renderWarningList(warningList);
+
+            } catch (e) {
+                console.error('Failed to render dashboard:', e);
+            } finally {
+                // Always hide loading overlay
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+
+            // Handle resize
+            window.onresize = function() {
+                if (typeof echarts !== 'undefined') {
+                    Object.values(chartInstances).forEach(chart => chart && chart.resize());
+                }
+            };
+        }
+
+        // Start
+        init();
+    </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

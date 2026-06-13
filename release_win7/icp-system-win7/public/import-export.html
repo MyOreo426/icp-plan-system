@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导入导出 - 计划管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo svg { width: 24px; height: 24px; fill: white; }
+        .system-title { color: white; font-size: 18px; font-weight: 600; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .nav-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .nav-btn.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
+        .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+
+        /* 通知按钮 */
+        .notification-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .notification-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .notification-btn svg { width: 22px; height: 22px; fill: white; }
+        .notification-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 18px; height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #667eea;
+        }
+        .notification-badge.hidden { display: none; }
+
+        /* 用户信息 */
+        .user-info { display: flex; align-items: center; gap: 10px; color: white; }
+        .user-avatar {
+            width: 36px; height: 36px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .user-name { font-size: 14px; }
+        .user-role {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .main-container { display: flex; margin-top: 60px; min-height: calc(100vh - 60px); }
+        .content { flex: 1; padding: 30px; }
+        .page-title { font-size: 24px; color: #2c3e50; font-weight: 600; margin-bottom: 25px; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .upload-area {
+            border: 2px dashed #e0e6ed;
+            border-radius: 12px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover { border-color: #667eea; background: #fafbff; }
+        .upload-icon { font-size: 48px; margin-bottom: 15px; }
+        .upload-text { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .upload-hint { font-size: 12px; color: #95a5a6; }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        .btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-outline { background: white; color: #667eea; border: 1px solid #667eea; }
+        .btn-outline:hover { background: #f0f3ff; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .template-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        .template-table th, .template-table td {
+            border: 1px solid #e0e6ed;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        .template-table th { background: #f8fafc; font-weight: 600; }
+        .template-table td { color: #666; }
+        .required { color: #e74c3c; }
+
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #0369a1;
+        }
+
+        .result-box {
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .result-box.success { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; }
+        .result-box.error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+        .result-box.show { display: block; }
+
+        input[type="file"] { display: none; }
+        /* 通知面板 */
+        .notification-panel {
+            position: absolute;
+            top: 70px;
+            right: 30px;
+            width: 380px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 200;
+            overflow: hidden;
+        }
+        .notification-panel.show { display: block; }
+        .notification-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e6ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-title { font-size: 15px; font-weight: 600; color: #2c3e50; }
+        .notification-mark-read { font-size: 12px; color: #667eea; cursor: pointer; }
+        .notification-mark-read:hover { text-decoration: underline; }
+        .notification-list { max-height: 400px; overflow-y: auto; }
+        .notification-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f3ff;
+            display: flex;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+        .notification-item:hover { background: #fafbff; }
+        .notification-item:last-child { border-bottom: none; }
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            background: #f0f3ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .notification-icon svg { width: 18px; height: 18px; fill: #667eea; }
+        .notification-content { flex: 1; min-width: 0; }
+        .notification-text { font-size: 13px; color: #34495e; line-height: 1.5; }
+        .notification-time { font-size: 11px; color: #95a5a6; margin-top: 4px; }
+        .notification-empty { padding: 40px 20px; text-align: center; color: #95a5a6; font-size: 13px; }
+    
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        /* 修改密码弹窗 */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 12px; padding: 30px; width: 400px; max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { margin: 0 0 20px; font-size: 18px; color: #2c3e50; }
+        .modal-box label { display: block; font-size: 13px; color: #7f8c8d; margin-bottom: 4px; margin-top: 12px; }
+        .modal-box input[type="password"] {
+            width: 100%; padding: 10px 12px; border: 1px solid #e0e6ed; border-radius: 6px;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+        .modal-box input:focus { border-color: #667eea; }
+        .modal-box .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .modal-box .btn-cancel {
+            padding: 8px 20px; border-radius: 6px; border: 1px solid #e0e6ed; background: white;
+            cursor: pointer; font-size: 14px; color: #7f8c8d;
+        }
+        .modal-box .btn-confirm {
+            padding: 8px 20px; border-radius: 6px; border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+            cursor: pointer; font-size: 14px;
+        }
+        .modal-box .btn-confirm:hover { opacity: 0.9; }
+        .modal-box .error-msg { color: #e74c3c; font-size: 12px; margin-top: 4px; display: none; }
+
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </div>
+            <span class="system-title">计划管理系统</span>
+            <div class="nav-divider"></div>
+            <a href="index.html" class="nav-btn" id="dashboardNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                仪表盘
+            </a>
+            <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                用户管理
+            </a>
+            <a href="admin.html?tab=groups" class="nav-btn" id="groupNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                小组管理
+            </a>
+            <a href="plan-list.html" class="nav-btn" id="planListNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                重点任务列表
+            </a>
+            <a href="plan-list-excel.html" class="nav-btn" id="planExcelNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
+                重点任务列表（表格版）
+            </a>
+            <a href="import-export.html" class="nav-btn active" id="importExportNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                导入导出
+            </a>
+            <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                操作日志
+            </a>
+        </div>
+        <div class="navbar-right">
+            <button class="notification-btn" onclick="toggleNotification()">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                <span class="notification-badge hidden" id="notifBadge">0</span>
+            </button>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span class="user-name" id="userName">加载中...</span>
+                <span class="user-role" id="userRole">--</span>
+            </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </nav>
+
+    <div class="notification-panel" id="notifPanel">
+        <div class="notification-header">
+            <span class="notification-title">通知消息</span>
+            <span class="notification-mark-read" onclick="markAllRead()">全部已读</span>
+        </div>
+        <div class="notification-list" id="notifList">
+            <div class="notification-empty">暂无通知</div>
+        </div>
+    </div>
+
+
+    <div class="main-container">
+        <main class="content">
+            <h1 class="page-title">导入导出</h1>
+
+            <!-- 导出 -->
+            <div class="card">
+                <div class="card-title">📤 导出数据</div>
+                <p style="color:#666;margin-bottom:15px;">将当前筛选条件下的计划数据导出为Excel文件</p>
+                <button class="btn btn-primary" id="exportBtn" onclick="exportPlans()">
+                    <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                    导出Excel
+                </button>
+            </div>
+
+            <!-- 模板下载 -->
+            <div class="card">
+                <div class="card-title">📥 下载导入模板</div>
+                <p style="color:#666;margin-bottom:15px;">下载标准格式的Excel模板，用于批量导入计划数据</p>
+                <button class="btn btn-outline" onclick="downloadTemplate()">
+                    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    下载模板
+                </button>
+
+                <div class="info-box">
+                    <strong>模板字段说明：</strong>
+                    <table class="template-table">
+                        <tr><th>字段名</th><th>说明</th><th>是否必填</th></tr>
+                        <tr><td>seq_no</td><td>序号</td><td class="required">必填</td></tr>
+                        <tr><td>category</td><td>类别</td><td class="required">必填</td></tr>
+                        <tr><td>project</td><td>项目名称</td><td>选填</td></tr>
+                        <tr><td>action_item</td><td>行动项</td><td class="required">必填</td></tr>
+                        <tr><td>plan_source</td><td>计划来源</td><td>选填</td></tr>
+                        <tr><td>deliverable</td><td>交付物</td><td>选填</td></tr>
+                        <tr><td>responsible_username</td><td>责任人工号</td><td>选填</td></tr>
+                        <tr><td>plan_issue_date</td><td>计划下发日期</td><td>选填</td></tr>
+                        <tr><td>plan_deadline</td><td>截止日期</td><td class="required">必填</td></tr>
+                        <tr><td>current_progress</td><td>当前进展</td><td>选填</td></tr>
+                        <tr><td>status</td><td>状态</td><td>选填</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 导入 -->
+            <div class="card">
+                <div class="card-title">📥 导入数据</div>
+                <p style="color:#666;margin-bottom:15px;">从Excel文件批量导入计划数据</p>
+
+                <div class="info-box">
+                    <strong>导入须知：</strong>
+                    <ul style="margin:10px 0 0 20px;line-height:1.8;">
+                        <li>文件格式支持 .xlsx, .xls</li>
+                        <li>责任人必须填写工号，系统将自动匹配小组成员</li>
+                        <li>日期格式请使用：YYYY-MM-DD（如 2024-01-15）</li>
+                        <li>状态可选值：PENDING, IN_PROGRESS, CLOSED, CONTINUOUS</li>
+                        <li>请确保数据格式正确，错误数据将被跳过</li>
+                    </ul>
+                </div>
+
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">点击选择文件或拖拽文件到此处</div>
+                    <div class="upload-hint">支持 .xlsx, .xls 格式</div>
+                </div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+
+                <div id="uploadResult" class="result-box"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        function checkAuth() {
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            return JSON.parse(userStr);
+        }
+
+        if (!checkAuth()) {
+            throw new Error('Not authenticated');
+        }
+
+        async function apiRequest(url, options = {}) {
+            const token = sessionStorage.getItem('token');
+            const defaultHeaders = {
+                'Authorization': `Bearer ${token}`
+            };
+
+            if (options.body instanceof FormData) {
+                delete defaultHeaders['Content-Type'];
+            } else {
+                defaultHeaders['Content-Type'] = 'application/json';
+            }
+
+            const mergedOptions = {
+                ...options,
+                headers: {
+                    ...defaultHeaders,
+                    ...(options.headers || {})
+                }
+            };
+
+            const res = await fetch(url, mergedOptions);
+            const contentType = res.headers.get('content-type');
+
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                if (data.code === 401) {
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('user');
+                    window.location.href = 'login.html';
+                }
+                return data;
+            }
+
+            return res;
+        }
+
+        // 下载模板
+        function downloadTemplate() {
+            const headers = ['序号', '类别', '项目', '行动项', '计划来源', '交付物', '责任人(工号)', '下发日期', '截止日期', '当前进展', '状态'];
+            const sampleData = [
+                [1, '合规检查', '年度内控优化', '完善采购流程', '年度计划', '采购管理制度v2.0', '', '2024-01-01', '2024-12-31', '', '待执行'],
+                [2, '风险评估', '风险管理', '更新风险清单', '季度审计', '风险评估报告', '', '2024-01-01', '2024-06-30', '准备开始', '待执行']
+            ];
+
+            let csv = headers.join(',') + '\n';
+            sampleData.forEach(row => {
+                csv += row.map(cell => {
+                    cell = String(cell);
+                    if (cell.includes(',') || cell.includes('"')) {
+                        return '"' + cell.replace(/"/g, '""') + '"';
+                    }
+                    return cell;
+                }).join(',') + '\n';
+            });
+
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '计划导入模板.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 导出数据
+        async function exportPlans() {
+            const btn = document.getElementById('exportBtn');
+            btn.disabled = true;
+            btn.innerHTML = '导出中...';
+
+            try {
+                const res = await apiRequest(`${API_BASE}/plans?page=1&pageSize=10000`);
+
+                if (res.code !== 200) {
+                    alert('导出失败: ' + res.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg> 导出Excel';
+                    return;
+                }
+
+                const plans = (res.data && res.data.list) || [];
+                if (plans.length === 0) {
+                    alert('暂无数据可导出');
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg> 导出Excel';
+                    return;
+                }
+
+                const headers = ['序号', '类别', '项目', '行动项', '计划来源', '交付物', '责任人', '截止日期', '状态', '当前进展'];
+                let csv = headers.join(',') + '\n';
+
+                plans.forEach(p => {
+                    const row = [
+                        p.seq_no,
+                        p.category,
+                        p.project || '',
+                        p.action_item,
+                        p.plan_source || '',
+                        p.deliverable || '',
+                        p.responsible_name || '',
+                        p.plan_deadline || '',
+                        getStatusName(p.status),
+                        p.current_progress || ''
+                    ];
+                    csv += row.map(cell => {
+                        cell = String(cell);
+                        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                            return '"' + cell.replace(/"/g, '""') + '"';
+                        }
+                        return cell;
+                    }).join(',') + '\n';
+                });
+
+                const BOM = '\uFEFF';
+                const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `计划_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                alert(`导出成功！共 ${plans.length} 条记录`);
+            } catch (e) {
+                alert('导出失败');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg> 导出Excel';
+        }
+
+        function getStatusName(status) {
+            const names = { 'PENDING': '待执行', 'IN_PROGRESS': '执行中', 'CLOSED': '已归零', 'CONTINUOUS': '持续开展' };
+            return names[status] || status;
+        }
+
+        // 处理文件选择 - 批量导入
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const resultBox = document.getElementById('uploadResult');
+            resultBox.className = 'result-box';
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = '正在读取文件...';
+
+            try {
+                // 动态加载SheetJS
+                if (typeof XLSX === 'undefined') {
+                    await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+                }
+
+                // 读取文件
+                const data = await readFileAsync(file);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+                // 读取第一个工作表
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                // 转为JSON（使用表头作为key）
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                if (jsonData.length === 0) {
+                    resultBox.className = 'result-box error show';
+                    resultBox.innerHTML = '<strong>导入失败：</strong>文件中没有数据行';
+                    return;
+                }
+
+                // 预览数据
+                resultBox.className = 'result-box';
+                resultBox.style.display = 'block';
+                resultBox.innerHTML = `
+                    <div style="margin-bottom:15px;">
+                        <strong>文件读取成功！</strong><br>
+                        工作表：${sheetName}，共 ${jsonData.length} 行数据
+                    </div>
+                    <div style="margin-bottom:15px;max-height:200px;overflow:auto;border:1px solid #e0e6ed;border-radius:6px;padding:10px;font-size:12px;background:#f8fafc;">
+                        <strong>前3行预览：</strong>
+                        <pre style="margin:5px 0 0;white-space:pre-wrap;">${jsonData.slice(0, 3).map((r, i) => `第${i+1}行: ${JSON.stringify(r, null, 0)}`).join('\n')}</pre>
+                    </div>
+                    <button class="btn btn-primary" onclick="doImport()" id="importConfirmBtn">
+                        确认导入 ${jsonData.length} 条数据
+                    </button>
+                    <button class="btn btn-outline" onclick="cancelImport()" style="margin-left:10px;">
+                        取消
+                    </button>
+                `;
+
+                // 暂存数据
+                window._importData = jsonData;
+            } catch (err) {
+                resultBox.className = 'result-box error show';
+                resultBox.innerHTML = `<strong>文件读取失败：</strong>${err.message}<br><br>请确保文件格式为 .xlsx 或 .xls`;
+            }
+
+            // 重置文件输入，允许重复选择同一文件
+            event.target.value = '';
+        }
+
+        // 动态加载脚本
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('无法加载Excel解析库，请检查网络'));
+                document.head.appendChild(script);
+            });
+        }
+
+        // 异步读取文件
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(new Uint8Array(e.target.result));
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 执行导入
+        async function doImport() {
+            const plans = window._importData;
+            if (!plans || plans.length === 0) return;
+
+            const btn = document.getElementById('importConfirmBtn');
+            const resultBox = document.getElementById('uploadResult');
+            btn.disabled = true;
+            btn.textContent = '导入中...';
+
+            try {
+                const res = await apiRequest(`${API_BASE}/plans/import`, {
+                    method: 'POST',
+                    body: JSON.stringify({ plans })
+                });
+
+                if (res.code === 200) {
+                    const result = res.data;
+                    let html = `<strong>导入完成！</strong><br>✅ 成功：${result.success} 条<br>`;
+                    if (result.failed > 0) {
+                        html += `❌ 失败：${result.failed} 条<br>`;
+                        html += '<div style="margin-top:10px;max-height:150px;overflow:auto;font-size:12px;color:#991b1b;">';
+                        html += result.errors.map(e => `<div>${e}</div>`).join('');
+                        html += '</div>';
+                    }
+                    resultBox.className = 'result-box success show';
+                    resultBox.innerHTML = html;
+                } else {
+                    resultBox.className = 'result-box error show';
+                    resultBox.innerHTML = `<strong>导入失败：</strong>${res.message}`;
+                }
+            } catch (err) {
+                resultBox.className = 'result-box error show';
+                resultBox.innerHTML = `<strong>导入失败：</strong>网络错误，请重试`;
+            }
+
+            window._importData = null;
+        }
+
+        // 取消导入
+        function cancelImport() {
+            window._importData = null;
+            const resultBox = document.getElementById('uploadResult');
+            resultBox.className = 'result-box';
+            resultBox.style.display = 'none';
+        }
+
+        function logout() {
+            const token = sessionStorage.getItem('token');
+            if (token) { fetch(`${API_BASE}/auth/logout`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } }).catch(()=>{}); }
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // 通知功能
+        function toggleNotification() {
+            const panel = document.getElementById('notifPanel');
+            if (panel) {
+                panel.classList.toggle('show');
+            } else {
+                loadNotifications();
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const data = await apiRequest(`${API_BASE}/notifications?page=1&pageSize=10`);
+                if (data.code === 200) {
+                    renderNotifications((data.data && data.data.list) || []);
+                    if ((data.data && data.data.total) > 0) {
+                        document.getElementById('notifBadge').textContent = data.data.total > 99 ? '99+' : data.data.total;
+                        document.getElementById('notifBadge').classList.remove('hidden');
+                    }
+                }
+            } catch (e) {
+                console.error('加载通知失败');
+            }
+        }
+
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notifList');
+            if (!list) return;
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="notification-empty">暂无通知</div>';
+                return;
+            }
+            list.innerHTML = notifications.map(n => `
+                <div class="notification-item">
+                    <div class="notification-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-text">${n.message || '新通知'}</div>
+                        <div class="notification-time">${formatTime(n.created_at)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatTime(time) {
+            if (!time) return '';
+            const d = new Date(time);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function markAllRead() {
+            try {
+                await apiRequest(`${API_BASE}/notifications/read-all`, { method: 'PUT' });
+                document.getElementById('notifBadge').classList.add('hidden');
+                loadNotifications();
+            } catch (e) {
+                console.error('标记已读失败');
+            }
+        }
+
+        function getRoleName(r) { return { ADMIN:'管理员', LEADER:'组长', MEMBER:'组员', DIRECTOR:'主任' }[r] || r; }
+        function getRoleEmoji(r) { return { ADMIN:'⚙️', LEADER:'👥', MEMBER:'👤', DIRECTOR:'🏢' }[r] || '👤'; }
+
+        // 初始化
+        const user = checkAuth();
+        if (user) {
+            document.getElementById('userName').textContent = user.real_name || user.username;
+            document.getElementById('userRole').textContent = getRoleName(user.role);
+            document.getElementById('userAvatar').textContent = getRoleEmoji(user.role);
+            
+            if (user.role === 'ADMIN') {
+                // 管理员：只显示用户管理、小组管理、操作日志
+                document.getElementById('dashboardNavBtn').style.display = 'none';
+                document.getElementById('planListNavBtn').style.display = 'none';
+                document.getElementById('importExportNavBtn').style.display = 'none';
+                document.getElementById('planExcelNavBtn').style.display = 'none';
+                document.getElementById('logNavBtn').style.display = 'flex';
+                document.getElementById('adminNavBtn').style.display = 'flex';
+                document.getElementById('groupNavBtn').style.display = 'flex';
+            } else if (['LEADER', 'DIRECTOR'].includes(user.role)) {
+                document.getElementById('logNavBtn').style.display = 'flex';
+            }
+        }
+
+        // 点击通知面板外部关闭
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('notifPanel');
+            const btn = document.querySelector('.notification-btn');
+            if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- 修改密码弹窗 -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>修改密码</h3>
+            <label>当前密码</label>
+            <input type="password" id="currentPassword" placeholder="请输入当前密码">
+            <label>新密码</label>
+            <input type="password" id="newPasswordModal" placeholder="请输入新密码（至少6位）">
+            <label>确认新密码</label>
+            <input type="password" id="confirmPasswordModal" placeholder="请再次输入新密码">
+            <div class="error-msg" id="passwordError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePasswordModal()">取消</button>
+                <button class="btn-confirm" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
