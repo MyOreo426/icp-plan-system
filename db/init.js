@@ -378,6 +378,36 @@ async function initDatabase() {
     `);
     console.log('✓ business_plan 表创建完成');
 
+    // 创建交付计划表
+    database.run(`
+      CREATE TABLE IF NOT EXISTS delivery_plan (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_no VARCHAR(100),
+        product_name VARCHAR(200),
+        user_name VARCHAR(100),
+        batch_no VARCHAR(100),
+        sortie_no VARCHAR(100),
+        assign_command TEXT,
+        outline_plan TEXT,
+        research_transfer_plan TEXT,
+        lead_seal TEXT,
+        enter_acceptance TEXT,
+        test_flight TEXT,
+        transfer_test TEXT,
+        transfer_field TEXT,
+        yh_plane_no VARCHAR(100),
+        current_progress TEXT,
+        transfer_cycle VARCHAR(100),
+        acceptance_issue_count INTEGER DEFAULT 0,
+        memo_count INTEGER DEFAULT 0,
+        remark TEXT,
+        creator_id INTEGER,
+        create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        update_time DATETIME
+      )
+    `);
+    console.log('✓ delivery_plan 表创建完成');
+
     // 创建登录尝试表
     database.run(`
       CREATE TABLE IF NOT EXISTS sys_login_attempt (

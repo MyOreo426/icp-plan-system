@@ -20,6 +20,7 @@ const notificationsRoutes = require('./routes/notifications');
 const logsRoutes = require('./routes/logs');
 const statsRoutes = require('./routes/stats');
 const businessPlansRoutes = require('./routes/business-plans');
+const deliveryPlansRoutes = require('./routes/delivery-plans');
 
 // 创建Express应用
 const app = express();
@@ -108,6 +109,7 @@ app.use('/api/notifications', notificationsRoutes); // 消息通知路由
 app.use('/api/logs', logsRoutes);           // 操作日志路由
 app.use('/api/stats', statsRoutes);         // 统计数据路由
 app.use('/api/business-plans', businessPlansRoutes); // 经营计划路由
+app.use('/api/delivery-plans', deliveryPlansRoutes); // 交付计划路由
 
 // 404处理
 app.use((req, res) => {
