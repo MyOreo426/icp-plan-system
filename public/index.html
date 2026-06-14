@@ -249,22 +249,48 @@
             font-size: 13px;
         }
 
-        /* 响应式 */
-        @media (max-width: 1200px) {
+        /* 响应式 - 多分辨率适配 */
+        @media (min-width: 1600px) {
+            .dashboard-container {
+                gap: 16px;
+                padding: 16px 20px;
+            }
+            .chart-card { padding: 12px 16px; }
+            .chart-title { font-size: 14px; }
+        }
+        @media (min-width: 1920px) {
+            .dashboard-container {
+                gap: 18px;
+                padding: 18px 24px;
+            }
+        }
+        @media (max-width: 1400px) {
+            .dashboard-container {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                padding: 10px 12px;
+            }
+        }
+        @media (max-width: 1100px) {
             .dashboard-container {
                 grid-template-columns: 1fr 1fr;
+                grid-template-rows: repeat(4, 1fr);
             }
         }
         @media (max-width: 768px) {
             .dashboard-container {
                 grid-template-columns: 1fr;
+                grid-template-rows: repeat(8, auto);
+                overflow-y: auto;
             }
+            .chart-card.wide { grid-column: span 1; }
         }
 
         /* Warning List */
         .warning-list {
-            max-height: 260px;
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
         }
         .warning-item {
             display: flex;
@@ -1604,11 +1630,17 @@
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
 
-            // Handle resize
+            // Handle resize with debounce
+            var resizeTimer = null;
             window.onresize = function() {
-                if (typeof echarts !== 'undefined') {
-                    Object.values(chartInstances).forEach(chart => chart && chart.resize());
-                }
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    if (typeof echarts !== 'undefined') {
+                        Object.values(chartInstances).forEach(function(chart) {
+                            chart && chart.resize();
+                        });
+                    }
+                }, 150);
             };
         }
 
