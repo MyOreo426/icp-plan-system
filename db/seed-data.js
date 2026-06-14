@@ -66,9 +66,9 @@ function seedDeliveryPlans(db) {
     var user = users[Math.floor(Math.random() * users.length)];
     var batch = Math.floor(Math.random() * 5) + 1;
     var sortie = Math.floor(Math.random() * 12) + 1;
-    var assignCmd = '命字' + padZero(2024000 + i, 6) + '号';
+    var assignCmd = '命字' + padZero(2025000 + i, 6) + '号';
 
-    var baseDate = randomDateObj(2024, 2025);
+    var baseDate = randomDateObj(2025, 2026);
     var outlineDate = new Date(baseDate.getTime());
     var researchDate = new Date(baseDate.getTime() + 30 * 86400000);
     var leadSealDate = new Date(baseDate.getTime() + 60 * 86400000);
