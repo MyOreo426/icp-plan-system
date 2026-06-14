@@ -21,7 +21,6 @@
   "pkg": {
     "assets": [
       "public/**/*",
-      "data/icp.db",
       "node_modules/sql.js/dist/sql-wasm.wasm"
     ],
     "targets": [
