@@ -280,7 +280,7 @@ module.exports = router;
 
 /**
  * GET /api/delivery-plans/stats/outline-by-month
- * 按月+产品类型统计大纲计划数量（用于柱状图）
+ * 按月+产品名称统计大纲计划数量（用于堆叠柱状图）
  */
 router.get('/stats/outline-by-month', (req, res) => {
   const db = getDb();
@@ -289,7 +289,6 @@ router.get('/stats/outline-by-month', (req, res) => {
 
   const plans = db.prepare(`
     SELECT 
-      product_no,
       product_name,
       outline_plan,
       SUBSTR(REPLACE(outline_plan, '/', '-'), 1, 4) as plan_year,
@@ -302,7 +301,7 @@ router.get('/stats/outline-by-month', (req, res) => {
   `).all(targetYear.toString());
 
   const monthData = {};
-  const productTypes = new Set();
+  const productNames = new Set();
 
   for (let m = 1; m <= 12; m++) {
     monthData[m.toString().padStart(2, '0')] = {};
@@ -310,24 +309,15 @@ router.get('/stats/outline-by-month', (req, res) => {
 
   plans.forEach(plan => {
     const month = plan.plan_month;
-    let productType = '其他';
-    if (plan.product_no) {
-      const match = plan.product_no.match(/^[A-Za-z0-9]+/);
-      if (match) {
-        productType = match[0].substring(0, 4).toUpperCase();
-      }
-    }
-    if (plan.product_name && plan.product_name.length <= 6) {
-      productType = plan.product_name;
-    }
+    const productName = plan.product_name || '未命名';
     
-    productTypes.add(productType);
+    productNames.add(productName);
     
     if (monthData[month]) {
-      if (!monthData[month][productType]) {
-        monthData[month][productType] = 0;
+      if (!monthData[month][productName]) {
+        monthData[month][productName] = 0;
       }
-      monthData[month][productType]++;
+      monthData[month][productName]++;
     }
   });
 
@@ -336,23 +326,24 @@ router.get('/stats/outline-by-month', (req, res) => {
     months.push(m + '月');
   }
 
-  const sortedTypes = Array.from(productTypes).sort();
-  const series = sortedTypes.map(type => {
+  const sortedNames = Array.from(productNames).sort();
+  const series = sortedNames.map(name => {
     const data = [];
     for (let m = 1; m <= 12; m++) {
       const mStr = m.toString().padStart(2, '0');
-      data.push((monthData[mStr] && monthData[mStr][type]) || 0);
+      data.push((monthData[mStr] && monthData[mStr][name]) || 0);
     }
     return {
-      name: type,
+      name: name,
       type: 'bar',
+      stack: 'total',
       data: data
     };
   });
 
   return success(res, {
     months: months,
-    productTypes: sortedTypes,
+    productNames: sortedNames,
     series: series,
     total: plans.length
   });
@@ -360,82 +351,71 @@ router.get('/stats/outline-by-month', (req, res) => {
 
 /**
  * GET /api/delivery-plans/stats/research-transfer-by-month
- * 按月+产品类型统计科研转场计划完成情况（用于柱状图）
+ * 按月统计科研转场计划和转试数量（用于分组柱状图）
  */
 router.get('/stats/research-transfer-by-month', (req, res) => {
   const db = getDb();
   const { year } = req.query;
   const targetYear = year || new Date().getFullYear();
 
-  const plans = db.prepare(`
+  // 科研转场计划月度统计
+  const researchPlans = db.prepare(`
     SELECT 
-      product_no,
-      product_name,
-      research_transfer_plan,
-      current_progress,
-      SUBSTR(REPLACE(research_transfer_plan, '/', '-'), 1, 4) as plan_year,
-      SUBSTR(REPLACE(research_transfer_plan, '/', '-'), 6, 2) as plan_month
+      SUBSTR(REPLACE(research_transfer_plan, '/', '-'), 6, 2) as plan_month,
+      COUNT(*) as count
     FROM delivery_plan
     WHERE research_transfer_plan IS NOT NULL 
       AND research_transfer_plan != ''
       AND SUBSTR(REPLACE(research_transfer_plan, '/', '-'), 1, 4) = ?
+    GROUP BY plan_month
     ORDER BY plan_month
   `).all(targetYear.toString());
 
-  const monthData = {};
-  const productTypes = new Set();
-
-  for (let m = 1; m <= 12; m++) {
-    monthData[m.toString().padStart(2, '0')] = {};
-  }
-
-  plans.forEach(plan => {
-    const month = plan.plan_month;
-    let productType = '其他';
-    if (plan.product_no) {
-      const match = plan.product_no.match(/^[A-Za-z0-9]+/);
-      if (match) {
-        productType = match[0].substring(0, 4).toUpperCase();
-      }
-    }
-    if (plan.product_name && plan.product_name.length <= 6) {
-      productType = plan.product_name;
-    }
-    
-    productTypes.add(productType);
-    
-    if (monthData[month]) {
-      if (!monthData[month][productType]) {
-        monthData[month][productType] = 0;
-      }
-      monthData[month][productType]++;
-    }
-  });
+  // 转试月度统计
+  const transferTestPlans = db.prepare(`
+    SELECT 
+      SUBSTR(REPLACE(transfer_test, '/', '-'), 6, 2) as plan_month,
+      COUNT(*) as count
+    FROM delivery_plan
+    WHERE transfer_test IS NOT NULL 
+      AND transfer_test != ''
+      AND SUBSTR(REPLACE(transfer_test, '/', '-'), 1, 4) = ?
+    GROUP BY plan_month
+    ORDER BY plan_month
+  `).all(targetYear.toString());
 
   const months = [];
+  const researchData = [];
+  const transferTestData = [];
+
   for (let m = 1; m <= 12; m++) {
+    const mStr = m.toString().padStart(2, '0');
     months.push(m + '月');
+    
+    const rItem = researchPlans.find(p => p.plan_month === mStr);
+    researchData.push(rItem ? rItem.count : 0);
+    
+    const tItem = transferTestPlans.find(p => p.plan_month === mStr);
+    transferTestData.push(tItem ? tItem.count : 0);
   }
 
-  const sortedTypes = Array.from(productTypes).sort();
-  const series = sortedTypes.map(type => {
-    const data = [];
-    for (let m = 1; m <= 12; m++) {
-      const mStr = m.toString().padStart(2, '0');
-      data.push((monthData[mStr] && monthData[mStr][type]) || 0);
-    }
-    return {
-      name: type,
+  const series = [
+    {
+      name: '科研转场计划',
       type: 'bar',
-      data: data
-    };
-  });
+      data: researchData
+    },
+    {
+      name: '转试',
+      type: 'bar',
+      data: transferTestData
+    }
+  ];
 
   return success(res, {
     months: months,
-    productTypes: sortedTypes,
     series: series,
-    total: plans.length
+    total: researchPlans.reduce((sum, p) => sum + p.count, 0) + transferTestPlans.reduce((sum, p) => sum + p.count, 0)
   });
 });
 

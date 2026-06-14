@@ -748,8 +748,8 @@
                 },
                 series: [{
                     type: 'pie',
-                    radius: ['42%', '78%'],
-                    center: ['32%', '50%'],
+                    radius: ['38%', '65%'],
+                    center: ['30%', '52%'],
                     avoidLabelOverlap: false,
                     itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
                     label: { show: false },
@@ -1450,17 +1450,17 @@
             });
         }
 
-        // 渲染交付转场计划月度分布（柱状图）
+        // 渲染交付转场计划月度分布（分组柱状图）
         function renderDeliveryTransferChart(data) {
             if (!chartInstances.deliveryTransfer || !data || !data.series) return;
 
-            const colors = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
+            const colors = ['#10b981', '#f59e0b'];
             const series = data.series.map((s, i) => ({
                 name: s.name,
                 type: 'bar',
-                stack: 'total',
                 data: s.data,
-                itemStyle: { color: colors[i % colors.length], borderRadius: [2, 2, 0, 0] }
+                barWidth: '30%',
+                itemStyle: { color: colors[i % colors.length], borderRadius: [4, 4, 0, 0] }
             }));
 
             const option = {
@@ -1471,13 +1471,13 @@
                 legend: {
                     data: data.series.map(s => s.name),
                     bottom: 0,
-                    textStyle: { fontSize: 10 }
+                    textStyle: { fontSize: 11 }
                 },
                 grid: {
-                    left: '2%',
-                    right: '2%',
+                    left: '3%',
+                    right: '3%',
                     bottom: '14%',
-                    top: '6%',
+                    top: '8%',
                     containLabel: true
                 },
                 xAxis: {
