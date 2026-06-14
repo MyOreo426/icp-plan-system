@@ -133,73 +133,53 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Stats Cards */
-        .stats-container {
+        /* Dashboard Layout - 三大板块 */
+        .dashboard-container {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
-            padding: 0 24px 20px;
-            max-width: 1400px;
+            padding: 0 20px 20px;
+            max-width: 1600px;
             margin: 0 auto;
         }
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        .dashboard-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .section-header {
             display: flex;
             align-items: center;
-            gap: 16px;
-            transition: all 0.25s;
+            gap: 10px;
+            margin-bottom: 4px;
         }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-        .stat-card.overdue { background: #fef2f2; border-left: 4px solid #ef4444; }
-        .stat-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
+        .section-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
+            font-size: 16px;
         }
-        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
-        .stat-icon.green { background: linear-gradient(135deg, #34d399, #10b981); }
-        .stat-icon.orange { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-        .stat-icon.red { background: linear-gradient(135deg, #f87171, #ef4444); }
-        .stat-info { flex: 1; }
-        .stat-value {
-            font-size: 28px;
+        .section-icon.biz { background: #dbeafe; }
+        .section-icon.delivery { background: #d1fae5; }
+        .section-icon.task { background: #fce7f3; }
+        .section-title {
+            font-size: 16px;
             font-weight: 700;
             color: #1f2937;
-            line-height: 1.2;
         }
-        .stat-label {
-            font-size: 13px;
-            color: #6b7280;
-            margin-top: 4px;
-        }
-        .stat-change {
+        .section-badge {
             font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 6px;
-            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #f3f4f6;
+            color: #6b7280;
+            margin-left: auto;
         }
-        .stat-change.up { background: #dcfce7; color: #16a34a; }
-        .stat-change.down { background: #fee2e2; color: #dc2626; }
-        .stat-change.neutral { background: #f3f4f6; color: #6b7280; }
 
-        /* Chart Grid */
-        .chart-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            padding: 0 20px 16px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        /* Chart Cards */
         .chart-card {
             background: white;
             border-radius: 10px;
@@ -207,15 +187,26 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         .chart-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #374151;
             margin-bottom: 10px;
             padding-bottom: 8px;
             border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .chart-wrapper { height: 200px; position: relative; }
-        .chart-wrapper.wide { height: 240px; }
+        .chart-title .category-tag {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            font-weight: 500;
+        }
+        .chart-wrapper { height: 180px; position: relative; }
+        .chart-wrapper.tall { height: 220px; }
         .chart-wrapper.no-data::after {
             content: '暂无数据';
             position: absolute;
@@ -224,6 +215,67 @@
             transform: translate(-50%, -50%);
             color: #9ca3af;
             font-size: 14px;
+        }
+
+        /* Warning List */
+        .warning-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .warning-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            gap: 10px;
+        }
+        .warning-item:last-child { border-bottom: none; }
+        .warning-item:hover { background: #f9fafb; }
+        .warning-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .warning-badge.red { background: #fee2e2; color: #dc2626; }
+        .warning-badge.orange { background: #ffedd5; color: #ea580c; }
+        .warning-badge.yellow { background: #fef3c7; color: #d97706; }
+        .warning-content { flex: 1; min-width: 0; }
+        .warning-title {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .warning-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 2px;
+        }
+        .warning-date {
+            font-size: 11px;
+            color: #6b7280;
+            flex-shrink: 0;
+        }
+        .no-warning {
+            text-align: center;
+            padding: 30px 20px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Warning List */
@@ -397,83 +449,84 @@
             <div class="loading-spinner"></div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="stats-container">
-            <div class="stat-card" id="statTotal">
-                <div class="stat-icon blue">📋</div>
-                <div class="stat-info">
-                    <div class="stat-value" id="totalPlans">0</div>
-                    <div class="stat-label">总计划数</div>
-                    <div class="stat-change neutral" id="totalChange">--</div>
+        <!-- Dashboard - 三大板块 -->
+        <div class="dashboard-container">
+            <!-- 第一列：经营计划板块 -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <div class="section-icon biz">📊</div>
+                    <div class="section-title">经营计划</div>
+                    <div class="section-badge" id="bizCountBadge">0项</div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        完成情况
+                        <span class="category-tag">按类型</span>
+                    </div>
+                    <div class="chart-wrapper" id="chartBizCompletion"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        分布情况
+                        <span class="category-tag">按部门</span>
+                    </div>
+                    <div class="chart-wrapper" id="chartBizDept"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        完成日期调整分布
+                        <span class="category-tag">月度</span>
+                    </div>
+                    <div class="chart-wrapper tall" id="chartBizFinishDateCompare"></div>
                 </div>
             </div>
-            <div class="stat-card" id="statInProgress">
-                <div class="stat-icon green">🔄</div>
-                <div class="stat-info">
-                    <div class="stat-value" id="inProgressPlans">0</div>
-                    <div class="stat-label">执行中</div>
-                    <div class="stat-change neutral" id="progressChange">--</div>
+
+            <!-- 第二列：交付计划板块 -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <div class="section-icon delivery">📦</div>
+                    <div class="section-title">交付计划</div>
+                    <div class="section-badge" id="deliveryCountBadge">0项</div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        大纲计划月度分布
+                        <span class="category-tag">按月</span>
+                    </div>
+                    <div class="chart-wrapper" id="chartDeliveryOutline"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        转场计划月度分布
+                        <span class="category-tag">按月</span>
+                    </div>
+                    <div class="chart-wrapper" id="chartDeliveryTransfer"></div>
                 </div>
             </div>
-            <div class="stat-card" id="statOverdue">
-                <div class="stat-icon red">⚠️</div>
-                <div class="stat-info">
-                    <div class="stat-value" id="overduePlans">0</div>
-                    <div class="stat-label">超期数</div>
-                    <div class="stat-change neutral" id="overdueChange">--</div>
+
+            <!-- 第三列：重点任务板块 -->
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <div class="section-icon task">🎯</div>
+                    <div class="section-title">重点任务</div>
+                    <div class="section-badge" id="taskCountBadge">0项</div>
                 </div>
-            </div>
-            <div class="stat-card" id="statMonthly">
-                <div class="stat-icon orange">📈</div>
-                <div class="stat-info">
-                    <div class="stat-value" id="monthlyPlans">0</div>
-                    <div class="stat-label">本月新增</div>
-                    <div class="stat-change neutral" id="monthlyChange">--</div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        完成情况
+                        <span class="category-tag">状态分布</span>
+                    </div>
+                    <div class="chart-wrapper" id="chartStatus"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">
+                        超期预警
+                        <span class="category-tag">7天内</span>
+                    </div>
+                    <div class="warning-list" id="warningList"></div>
                 </div>
             </div>
         </div>
-
-        <!-- Chart Section Row 1 -->
-        <div class="chart-container">
-            <div class="chart-card">
-                <div class="chart-title">计划状态分布</div>
-                <div class="chart-wrapper" id="chartStatus"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">月度趋势</div>
-                <div class="chart-wrapper" id="chartTrend"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">经营计划完成情况</div>
-                <div class="chart-wrapper" id="chartBizCompletion"></div>
-            </div>
-        </div>
-
-        <!-- Chart Section Row 2 -->
-        <div class="chart-container">
-            <div class="chart-card">
-                <div class="chart-title">经营计划分部情况</div>
-                <div class="chart-wrapper" id="chartBizDept"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">交付大纲计划月度分布</div>
-                <div class="chart-wrapper" id="chartDeliveryOutline"></div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">交付转场计划月度分布</div>
-                <div class="chart-wrapper" id="chartDeliveryTransfer"></div>
-            </div>
-        </div>
-
-        <!-- Chart Section Row 3 - 经营计划完成日期调整瀑布图 -->
-        <div class="chart-container" style="grid-template-columns: 1fr;">
-            <div class="chart-card">
-                <div class="chart-title">经营计划完成日期调整分布</div>
-                <div class="chart-wrapper wide" id="chartBizFinishDateCompare"></div>
-            </div>
-        </div>
-
-        <!-- Module Cards - 已移除，改用导航栏切换 -->
     </div>
 
     <script>
@@ -666,12 +719,18 @@
         // Init charts
         function initCharts() {
             chartInstances.status = echarts.init(document.getElementById('chartStatus'));
-            chartInstances.trend = echarts.init(document.getElementById('chartTrend'));
             chartInstances.bizCompletion = echarts.init(document.getElementById('chartBizCompletion'));
             chartInstances.bizDept = echarts.init(document.getElementById('chartBizDept'));
             chartInstances.deliveryOutline = echarts.init(document.getElementById('chartDeliveryOutline'));
             chartInstances.deliveryTransfer = echarts.init(document.getElementById('chartDeliveryTransfer'));
             chartInstances.bizFinishDateCompare = echarts.init(document.getElementById('chartBizFinishDateCompare'));
+        }
+
+        // 更新板块数量徽章
+        function updateSectionBadges(taskCount, bizCount, deliveryCount) {
+            document.getElementById('taskCountBadge').textContent = taskCount + '项';
+            document.getElementById('bizCountBadge').textContent = bizCount + '项';
+            document.getElementById('deliveryCountBadge').textContent = deliveryCount + '项';
         }
 
         // Render status pie chart
@@ -1317,8 +1376,15 @@
                 if (transferRes.code === 200) {
                     renderDeliveryTransferChart(transferRes.data);
                 }
+
+                // 返回数据供徽章更新使用
+                return {
+                    outline: outlineRes.code === 200 ? outlineRes.data : null,
+                    transfer: transferRes.code === 200 ? transferRes.data : null
+                };
             } catch (e) {
                 console.error('Failed to fetch delivery stats:', e);
+                return { outline: null, transfer: null };
             }
         }
 
@@ -1511,34 +1577,41 @@
 
             // Fetch and render data
             try {
+                // 加载重点任务数据
                 const plans = await fetchPlans();
                 allPlans = plans;
 
-                // Calculate and update stats
-                const stats = calculateStats(plans);
-                updateStats(stats);
-
-                // Calculate chart data
+                // 计算状态分布
                 const statusDist = getStatusDistribution(plans);
-                const monthlyTrend = getMonthlyTrend(plans);
+                // 获取预警列表
+                const warnings = getWarningList(plans);
 
-                // Render charts (only if ECharts available)
+                // 渲染重点任务相关图表
                 if (typeof echarts !== 'undefined') {
                     renderStatusChart(statusDist);
-                    renderTrendChart(monthlyTrend);
+                }
+                renderWarningList(warnings);
 
-                    // 加载并渲染经营计划图表
-                    fetchBusinessPlans().then(bizPlans => {
+                // 加载并渲染经营计划图表
+                const bizPlansPromise = fetchBusinessPlans().then(bizPlans => {
+                    if (typeof echarts !== 'undefined') {
                         renderBizCompletionChart(bizPlans);
                         renderBizDeptChart(bizPlans);
-                    });
+                    }
+                    return bizPlans.length;
+                });
 
-                    // 加载并渲染经营计划完成日期调整瀑布图
-                    fetchBizFinishDateCompare();
+                // 加载并渲染经营计划完成日期调整图表
+                const bizFinishPromise = fetchBizFinishDateCompare();
 
-                    // 加载并渲染交付计划图表
-                    fetchDeliveryStats();
-                }
+                // 加载并渲染交付计划图表
+                const deliveryPromise = fetchDeliveryStats();
+
+                // 等待所有数据加载完成，更新徽章
+                Promise.all([bizPlansPromise, deliveryPromise]).then(([bizCount, deliveryData]) => {
+                    const deliveryCount = deliveryData && deliveryData.outline ? deliveryData.outline.total : 0;
+                    updateSectionBadges(plans.length, bizCount, deliveryCount);
+                });
 
             } catch (e) {
                 console.error('Failed to render dashboard:', e);
