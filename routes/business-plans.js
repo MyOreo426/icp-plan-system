@@ -554,11 +554,11 @@ router.get('/stats/finish-date-compare', (req, res) => {
     const planTypes = typesResult.map(function(t) { return t.plan_type; });
 
     // 4. 整理成 12个月 × 类型 的数据结构
-    var months = [];
+    var monthList = [];
     var series = [];
 
     for (var m = 1; m <= 12; m++) {
-      months.push(m + '月');
+      monthList.push(m + '月');
     }
 
     // 初始化每个类型的月度数据
@@ -648,7 +648,7 @@ router.get('/stats/finish-date-compare', (req, res) => {
 
     var result = {
       year: currentYear,
-      months: months,
+      months: monthList,
       plan_types: planTypes,
       series: series,
       summary: {
