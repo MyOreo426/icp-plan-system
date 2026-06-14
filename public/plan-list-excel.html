@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>重点任务列表（表格版）- 内控计划共享编辑系统</title>
+    <title>重点任务（表格版）- 内控计划共享编辑系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -573,11 +573,11 @@
             </a>
             <a href="plan-list.html" class="nav-btn" id="planListNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-                重点任务列表
+                重点任务
             </a>
             <a href="plan-list-excel.html" class="nav-btn active" id="planExcelNavBtn">
                 <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
-                重点任务列表（表格版）
+                重点任务（表格版）
             </a>
             <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
@@ -1149,7 +1149,7 @@
             } catch (e) {}
         }
 
-        // 加载重点任务列表
+        // 加载重点任务
         async function loadPlans(page = 1) {
             if (isAddingNew) cancelNewRow();
             if (editingCell) finishEditing();
