@@ -634,7 +634,29 @@ function insertSeedData(db) {
   });
 
   console.log('✓ 插入30条测试计划数据');
-  console.log(`  合计：2小组/8用户/30条计划`);
+
+  // 引入业务数据生成模块
+  var seedData = require('./seed-data');
+
+  // ===== 插入经营计划测试数据
+  var bpCount = db.prepare('SELECT COUNT(*) as count FROM business_plan').get();
+  if (!bpCount || bpCount.count === 0) {
+    seedData.seedBusinessPlans(db);
+    console.log('✓ 插入60条经营计划测试数据');
+  } else {
+    console.log('经营计划数据已存在，跳过插入');
+  }
+
+  // ===== 插入交付计划测试数据
+  var dpCount = db.prepare('SELECT COUNT(*) as count FROM delivery_plan').get();
+  if (!dpCount || dpCount.count === 0) {
+    seedData.seedDeliveryPlans(db);
+    console.log('✓ 插入60条交付计划测试数据');
+  } else {
+    console.log('交付计划数据已存在，跳过插入');
+  }
+
+  console.log('  合计：2小组/8用户/30条重点计划/60条经营计划/60条交付计划');
 }
 
 /**
