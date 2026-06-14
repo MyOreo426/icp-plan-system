@@ -1158,7 +1158,9 @@
         // 获取经营计划完成日期对比数据
         async function fetchBizFinishDateCompare() {
             try {
-                const res = await fetch(API_BASE + '/business-plans/stats/finish-date-compare?group_by_type=1');
+                const res = await fetch(API_BASE + '/business-plans/stats/finish-date-compare?group_by_type=1', {
+                    headers: getHeaders()
+                });
                 const data = await res.json();
                 if (data.code === 0) {
                     renderBizFinishDateCompareChart(data.data);
@@ -1303,9 +1305,10 @@
         // 获取交付计划统计数据
         async function fetchDeliveryStats() {
             try {
+                const headers = getHeaders();
                 const [outlineRes, transferRes] = await Promise.all([
-                    fetch(API_BASE + '/delivery-plans/stats/outline-by-month').then(r => r.json()),
-                    fetch(API_BASE + '/delivery-plans/stats/research-transfer-by-month').then(r => r.json())
+                    fetch(API_BASE + '/delivery-plans/stats/outline-by-month', { headers }).then(r => r.json()),
+                    fetch(API_BASE + '/delivery-plans/stats/research-transfer-by-month', { headers }).then(r => r.json())
                 ]);
 
                 if (outlineRes.code === 0) {
