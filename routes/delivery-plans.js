@@ -290,15 +290,11 @@ router.get('/stats/outline-by-month', (req, res) => {
   const plans = db.prepare(`
     SELECT 
       product_name,
-      outline_plan,
-      SUBSTR(REPLACE(outline_plan, '/', '-'), 1, 4) as plan_year,
-      SUBSTR(REPLACE(outline_plan, '/', '-'), 6, 2) as plan_month
+      outline_plan
     FROM delivery_plan
     WHERE outline_plan IS NOT NULL 
       AND outline_plan != ''
-      AND SUBSTR(REPLACE(outline_plan, '/', '-'), 1, 4) = ?
-    ORDER BY plan_month
-  `).all(targetYear.toString());
+  `).all();
 
   const monthData = {};
   const productNames = new Set();
@@ -308,17 +304,26 @@ router.get('/stats/outline-by-month', (req, res) => {
   }
 
   plans.forEach(plan => {
-    const month = plan.plan_month;
+    // 解析日期，兼容 2025/1/15、2025-01-15、2025.1.15 等格式
+    const dateStr = plan.outline_plan.replace(/[./]/g, '-');
+    const parts = dateStr.split('-');
+    if (parts.length < 2) return;
+    
+    const planYear = parseInt(parts[0], 10);
+    const planMonth = parseInt(parts[1], 10);
+    
+    if (planYear !== parseInt(targetYear, 10)) return;
+    if (planMonth < 1 || planMonth > 12) return;
+    
+    const monthKey = planMonth.toString().padStart(2, '0');
     const productName = plan.product_name || '未命名';
     
     productNames.add(productName);
     
-    if (monthData[month]) {
-      if (!monthData[month][productName]) {
-        monthData[month][productName] = 0;
-      }
-      monthData[month][productName]++;
+    if (!monthData[monthKey][productName]) {
+      monthData[monthKey][productName] = 0;
     }
+    monthData[monthKey][productName]++;
   });
 
   const months = [];
@@ -351,52 +356,54 @@ router.get('/stats/outline-by-month', (req, res) => {
 
 /**
  * GET /api/delivery-plans/stats/research-transfer-by-month
- * 按月统计科研转场计划和转试数量（用于分组柱状图）
+ * 按月统计科研转场计划和转场数量（用于分组柱状图）
  */
 router.get('/stats/research-transfer-by-month', (req, res) => {
   const db = getDb();
   const { year } = req.query;
   const targetYear = year || new Date().getFullYear();
 
+  // 解析日期的辅助函数
+  function parseMonth(dateStr, targetYr) {
+    if (!dateStr) return null;
+    const normalized = dateStr.replace(/[./]/g, '-');
+    const parts = normalized.split('-');
+    if (parts.length < 2) return null;
+    const yr = parseInt(parts[0], 10);
+    const mo = parseInt(parts[1], 10);
+    if (yr !== parseInt(targetYr, 10) || mo < 1 || mo > 12) return null;
+    return mo.toString().padStart(2, '0');
+  }
+
   // 科研转场计划月度统计
   const researchPlans = db.prepare(`
-    SELECT 
-      SUBSTR(REPLACE(research_transfer_plan, '/', '-'), 6, 2) as plan_month,
-      COUNT(*) as count
+    SELECT research_transfer_plan
     FROM delivery_plan
     WHERE research_transfer_plan IS NOT NULL 
       AND research_transfer_plan != ''
-      AND SUBSTR(REPLACE(research_transfer_plan, '/', '-'), 1, 4) = ?
-    GROUP BY plan_month
-    ORDER BY plan_month
-  `).all(targetYear.toString());
+  `).all();
 
-  // 转试月度统计
-  const transferTestPlans = db.prepare(`
-    SELECT 
-      SUBSTR(REPLACE(transfer_test, '/', '-'), 6, 2) as plan_month,
-      COUNT(*) as count
+  // 转场月度统计
+  const transferFieldPlans = db.prepare(`
+    SELECT transfer_field
     FROM delivery_plan
-    WHERE transfer_test IS NOT NULL 
-      AND transfer_test != ''
-      AND SUBSTR(REPLACE(transfer_test, '/', '-'), 1, 4) = ?
-    GROUP BY plan_month
-    ORDER BY plan_month
-  `).all(targetYear.toString());
+    WHERE transfer_field IS NOT NULL 
+      AND transfer_field != ''
+  `).all();
 
   const months = [];
   const researchData = [];
-  const transferTestData = [];
+  const transferFieldData = [];
 
   for (let m = 1; m <= 12; m++) {
     const mStr = m.toString().padStart(2, '0');
     months.push(m + '月');
     
-    const rItem = researchPlans.find(p => p.plan_month === mStr);
-    researchData.push(rItem ? rItem.count : 0);
+    const rCount = researchPlans.filter(p => parseMonth(p.research_transfer_plan, targetYear) === mStr).length;
+    researchData.push(rCount);
     
-    const tItem = transferTestPlans.find(p => p.plan_month === mStr);
-    transferTestData.push(tItem ? tItem.count : 0);
+    const tCount = transferFieldPlans.filter(p => parseMonth(p.transfer_field, targetYear) === mStr).length;
+    transferFieldData.push(tCount);
   }
 
   const series = [
@@ -406,16 +413,16 @@ router.get('/stats/research-transfer-by-month', (req, res) => {
       data: researchData
     },
     {
-      name: '转试',
+      name: '转场',
       type: 'bar',
-      data: transferTestData
+      data: transferFieldData
     }
   ];
 
   return success(res, {
     months: months,
     series: series,
-    total: researchPlans.reduce((sum, p) => sum + p.count, 0) + transferTestPlans.reduce((sum, p) => sum + p.count, 0)
+    total: researchData.reduce((a, b) => a + b, 0) + transferFieldData.reduce((a, b) => a + b, 0)
   });
 });
 
