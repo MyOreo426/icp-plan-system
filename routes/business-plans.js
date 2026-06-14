@@ -504,12 +504,166 @@ router.get('/stats/by-department', (req, res) => {
 
 /**
  * GET /api/business-plans/stats/finish-date-compare
- * 预计完成日期 vs 计划完成日期 月度对比（瀑布图数据）
+ * 预计完成日期 vs 计划完成日期 月度对比（瀑布图/分组柱状图数据）
+ * 支持按计划类型分组
  */
 router.get('/stats/finish-date-compare', (req, res) => {
   const db = getDb();
   const currentYear = new Date().getFullYear();
+  const groupByType = req.query.group_by_type === '1' || req.query.groupByType === '1';
 
+  if (groupByType) {
+    // 按类型分组统计
+    // 1. 按月份+类型统计预计完成数量
+    const expectedByType = db.prepare(`
+      SELECT 
+        CAST(strftime('%m', expected_finish_date) AS INTEGER) as month,
+        plan_type,
+        COUNT(*) as count
+      FROM business_plan
+      WHERE expected_finish_date IS NOT NULL 
+        AND expected_finish_date != ''
+        AND strftime('%Y', expected_finish_date) = ?
+        AND plan_type IS NOT NULL AND plan_type != ''
+      GROUP BY strftime('%m', expected_finish_date), plan_type
+      ORDER BY month, plan_type
+    `).all(currentYear.toString());
+
+    // 2. 按月份+类型统计计划完成数量
+    const plannedByType = db.prepare(`
+      SELECT 
+        CAST(strftime('%m', plan_finish_date) AS INTEGER) as month,
+        plan_type,
+        COUNT(*) as count
+      FROM business_plan
+      WHERE plan_finish_date IS NOT NULL 
+        AND plan_finish_date != ''
+        AND strftime('%Y', plan_finish_date) = ?
+        AND plan_type IS NOT NULL AND plan_type != ''
+      GROUP BY strftime('%m', plan_finish_date), plan_type
+      ORDER BY month, plan_type
+    `).all(currentYear.toString());
+
+    // 3. 获取所有计划类型
+    const typesResult = db.prepare(`
+      SELECT DISTINCT plan_type
+      FROM business_plan
+      WHERE plan_type IS NOT NULL AND plan_type != ''
+      ORDER BY plan_type
+    `).all();
+    const planTypes = typesResult.map(function(t) { return t.plan_type; });
+
+    // 4. 整理成 12个月 × 类型 的数据结构
+    var months = [];
+    var series = [];
+
+    for (var m = 1; m <= 12; m++) {
+      months.push(m + '月');
+    }
+
+    // 初始化每个类型的月度数据
+    for (var t = 0; t < planTypes.length; t++) {
+      var typeName = planTypes[t];
+      var typeData = {
+        name: typeName,
+        type: 'bar',
+        data: []
+      };
+      for (var m = 1; m <= 12; m++) {
+        typeData.data.push(0);
+      }
+      series.push(typeData);
+    }
+
+    // 填充预计完成数据（负数，因为是"流出"）
+    expectedByType.forEach(function(item) {
+      var typeIdx = planTypes.indexOf(item.plan_type);
+      if (typeIdx >= 0 && item.month >= 1 && item.month <= 12) {
+        // 预计完成作为基础值，不直接显示，而是计算差值
+        // 这里我们直接存储差值
+      }
+    });
+
+    // 计算每月每类型的差值（计划完成 - 预计完成）
+    // 先建一个 map 存预计和计划的数据
+    var expectedMap = {};
+    var plannedMap = {};
+    
+    expectedByType.forEach(function(item) {
+      var key = item.month + '_' + item.plan_type;
+      expectedMap[key] = item.count;
+    });
+    plannedByType.forEach(function(item) {
+      var key = item.month + '_' + item.plan_type;
+      plannedMap[key] = item.count;
+    });
+
+    // 填充差值到 series
+    for (var tIdx = 0; tIdx < planTypes.length; tIdx++) {
+      var typeName = planTypes[tIdx];
+      for (var mIdx = 0; mIdx < 12; mIdx++) {
+        var monthNum = mIdx + 1;
+        var key = monthNum + '_' + typeName;
+        var exp = expectedMap[key] || 0;
+        var pla = plannedMap[key] || 0;
+        series[tIdx].data[mIdx] = pla - exp;
+      }
+    }
+
+    // 计算汇总数据
+    var totalExpected = 0;
+    var totalPlanned = 0;
+    var delayedCount = 0;
+    var advancedCount = 0;
+
+    // 计算每个计划的延期/提前情况（需要逐条计划判断）
+    var allPlans = db.prepare(`
+      SELECT plan_type, expected_finish_date, plan_finish_date
+      FROM business_plan
+      WHERE expected_finish_date IS NOT NULL 
+        AND expected_finish_date != ''
+        AND plan_finish_date IS NOT NULL 
+        AND plan_finish_date != ''
+        AND strftime('%Y', expected_finish_date) = ?
+    `).all(currentYear.toString());
+
+    allPlans.forEach(function(plan) {
+      totalExpected++;
+      if (plan.plan_finish_date > plan.expected_finish_date) {
+        delayedCount++;
+      } else if (plan.plan_finish_date < plan.expected_finish_date) {
+        advancedCount++;
+      }
+    });
+
+    // 统计计划完成的总数
+    var plannedTotal = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM business_plan
+      WHERE plan_finish_date IS NOT NULL 
+        AND plan_finish_date != ''
+        AND strftime('%Y', plan_finish_date) = ?
+    `).get(currentYear.toString());
+    totalPlanned = plannedTotal ? plannedTotal.count : 0;
+
+    var result = {
+      year: currentYear,
+      months: months,
+      plan_types: planTypes,
+      series: series,
+      summary: {
+        total_expected: totalExpected,
+        total_planned: totalPlanned,
+        delayed_count: delayedCount,
+        advanced_count: advancedCount,
+        delay_rate: totalExpected > 0 ? ((delayedCount / totalExpected) * 100).toFixed(1) + '%' : '0%'
+      }
+    };
+
+    return success(res, result);
+  }
+
+  // 默认：不按类型分组，总计月度差值（原有逻辑）
   // 统计每个月的预计完成数量
   const expectedStats = db.prepare(`
     SELECT 
