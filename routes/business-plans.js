@@ -502,4 +502,103 @@ router.get('/stats/by-department', (req, res) => {
   return success(res, result);
 });
 
+/**
+ * GET /api/business-plans/stats/finish-date-compare
+ * 预计完成日期 vs 计划完成日期 月度对比（瀑布图数据）
+ */
+router.get('/stats/finish-date-compare', (req, res) => {
+  const db = getDb();
+  const currentYear = new Date().getFullYear();
+
+  // 统计每个月的预计完成数量
+  const expectedStats = db.prepare(`
+    SELECT 
+      CAST(strftime('%m', expected_finish_date) AS INTEGER) as month,
+      COUNT(*) as count
+    FROM business_plan
+    WHERE expected_finish_date IS NOT NULL 
+      AND expected_finish_date != ''
+      AND strftime('%Y', expected_finish_date) = ?
+    GROUP BY strftime('%m', expected_finish_date)
+    ORDER BY month
+  `).all(currentYear.toString());
+
+  // 统计每个月的计划完成数量
+  const plannedStats = db.prepare(`
+    SELECT 
+      CAST(strftime('%m', plan_finish_date) AS INTEGER) as month,
+      COUNT(*) as count
+    FROM business_plan
+    WHERE plan_finish_date IS NOT NULL 
+      AND plan_finish_date != ''
+      AND strftime('%Y', plan_finish_date) = ?
+    GROUP BY strftime('%m', plan_finish_date)
+    ORDER BY month
+  `).all(currentYear.toString());
+
+  // 整理成 1-12 月的数据
+  const months = [];
+  const expectedData = [];
+  const plannedData = [];
+  const diffData = [];
+
+  for (var m = 1; m <= 12; m++) {
+    months.push(m + '月');
+    
+    var exp = expectedStats.find(function(s) { return s.month === m; });
+    var expCount = exp ? exp.count : 0;
+    expectedData.push(expCount);
+    
+    var pla = plannedStats.find(function(s) { return s.month === m; });
+    var plaCount = pla ? pla.count : 0;
+    plannedData.push(plaCount);
+    
+    diffData.push(plaCount - expCount);
+  }
+
+  // 计算汇总指标
+  var totalExpected = expectedData.reduce(function(a, b) { return a + b; }, 0);
+  var totalPlanned = plannedData.reduce(function(a, b) { return a + b; }, 0);
+  
+  // 计算延期计划数量（计划完成月份 > 预计完成月份的计划数）
+  var delayedCount = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM business_plan
+    WHERE expected_finish_date IS NOT NULL 
+      AND expected_finish_date != ''
+      AND plan_finish_date IS NOT NULL 
+      AND plan_finish_date != ''
+      AND plan_finish_date > expected_finish_date
+      AND strftime('%Y', expected_finish_date) = ?
+  `).get(currentYear.toString());
+  
+  var advancedCount = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM business_plan
+    WHERE expected_finish_date IS NOT NULL 
+      AND expected_finish_date != ''
+      AND plan_finish_date IS NOT NULL 
+      AND plan_finish_date != ''
+      AND plan_finish_date < expected_finish_date
+      AND strftime('%Y', expected_finish_date) = ?
+  `).get(currentYear.toString());
+
+  var result = {
+    year: currentYear,
+    months: months,
+    expected_count: expectedData,
+    planned_count: plannedData,
+    diff_count: diffData,
+    summary: {
+      total_expected: totalExpected,
+      total_planned: totalPlanned,
+      delayed_count: delayedCount ? delayedCount.count : 0,
+      advanced_count: advancedCount ? advancedCount.count : 0,
+      delay_rate: totalExpected > 0 ? ((delayedCount.count / totalExpected) * 100).toFixed(1) + '%' : '0%'
+    }
+  };
+
+  return success(res, result);
+});
+
 module.exports = router;

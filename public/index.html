@@ -215,6 +215,7 @@
             border-bottom: 1px solid #f3f4f6;
         }
         .chart-wrapper { height: 200px; position: relative; }
+        .chart-wrapper.wide { height: 240px; }
         .chart-wrapper.no-data::after {
             content: '暂无数据';
             position: absolute;
@@ -464,6 +465,14 @@
             </div>
         </div>
 
+        <!-- Chart Section Row 3 - 经营计划完成日期调整瀑布图 -->
+        <div class="chart-container" style="grid-template-columns: 1fr;">
+            <div class="chart-card">
+                <div class="chart-title">经营计划完成日期调整分布</div>
+                <div class="chart-wrapper wide" id="chartBizFinishDateCompare"></div>
+            </div>
+        </div>
+
         <!-- Module Cards - 已移除，改用导航栏切换 -->
     </div>
 
@@ -662,6 +671,7 @@
             chartInstances.bizDept = echarts.init(document.getElementById('chartBizDept'));
             chartInstances.deliveryOutline = echarts.init(document.getElementById('chartDeliveryOutline'));
             chartInstances.deliveryTransfer = echarts.init(document.getElementById('chartDeliveryTransfer'));
+            chartInstances.bizFinishDateCompare = echarts.init(document.getElementById('chartBizFinishDateCompare'));
         }
 
         // Render status pie chart
@@ -1145,6 +1155,133 @@
             });
         }
 
+        // 获取经营计划完成日期对比数据
+        async function fetchBizFinishDateCompare() {
+            try {
+                const res = await fetch(API_BASE + '/business-plans/stats/finish-date-compare');
+                const data = await res.json();
+                if (data.code === 0) {
+                    renderBizFinishDateCompareChart(data.data);
+                }
+            } catch (e) {
+                console.error('Failed to fetch biz finish date compare:', e);
+            }
+        }
+
+        // 渲染经营计划完成日期调整瀑布图
+        function renderBizFinishDateCompareChart(data) {
+            if (!chartInstances.bizFinishDateCompare || !data || !data.diff_count) return;
+
+            var months = data.months;
+            var diffData = data.diff_count;
+            var expectedData = data.expected_count;
+            var plannedData = data.planned_count;
+
+            // 根据正负值设置颜色
+            var barColors = diffData.map(function(val) {
+                return val >= 0 ? '#f59e0b' : '#10b981';
+            });
+
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        var month = params[0].name;
+                        var diff = params[0].value;
+                        var expected = 0;
+                        var planned = 0;
+                        // 找到对应月份的预计和计划数据
+                        for (var i = 0; i < months.length; i++) {
+                            if (months[i] === month) {
+                                expected = expectedData[i];
+                                planned = plannedData[i];
+                                break;
+                            }
+                        }
+                        var diffText = diff >= 0 ? ('+' + diff) : diff;
+                        return '<div style="font-size:12px;">' +
+                            '<b>' + month + '</b><br/>' +
+                            '预计完成：' + expected + ' 项<br/>' +
+                            '计划完成：' + planned + ' 项<br/>' +
+                            '调整差值：<span style="color:' + (diff >= 0 ? '#f59e0b' : '#10b981') + ';font-weight:bold;">' + diffText + ' 项</span>' +
+                            '</div>';
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: months,
+                    axisLabel: { fontSize: 11 },
+                    axisLine: { lineStyle: { color: '#e5e7eb' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { fontSize: 11 },
+                    splitLine: { lineStyle: { color: '#f3f4f6' } }
+                },
+                series: [
+                    {
+                        name: '调整差值',
+                        type: 'bar',
+                        data: diffData.map(function(val, idx) {
+                            return {
+                                value: val,
+                                itemStyle: {
+                                    color: barColors[idx],
+                                    borderRadius: val >= 0 ? [4, 4, 0, 0] : [0, 0, 4, 4]
+                                }
+                            };
+                        }),
+                        barWidth: '50%',
+                        label: {
+                            show: true,
+                            position: 'top',
+                            fontSize: 11,
+                            fontWeight: 'bold',
+                            formatter: function(params) {
+                                if (params.value > 0) return '+' + params.value;
+                                if (params.value < 0) return params.value;
+                                return '';
+                            },
+                            color: function(params) {
+                                return params.value >= 0 ? '#d97706' : '#059669';
+                            }
+                        },
+                        markLine: {
+                            silent: true,
+                            symbol: 'none',
+                            lineStyle: {
+                                color: '#9ca3af',
+                                width: 1,
+                                type: 'dashed'
+                            },
+                            data: [
+                                { yAxis: 0 }
+                            ]
+                        }
+                    }
+                ]
+            };
+
+            chartInstances.bizFinishDateCompare.setOption(option);
+
+            // 判断是否有数据
+            var hasData = diffData.some(function(v) { return v !== 0; });
+            document.getElementById('chartBizFinishDateCompare').classList.toggle('no-data', !hasData);
+
+            // 双击跳转
+            chartInstances.bizFinishDateCompare.on('dblclick', function() {
+                window.location.href = 'business-plan-list.html';
+            });
+        }
+
         // 获取交付计划统计数据
         async function fetchDeliveryStats() {
             try {
@@ -1374,6 +1511,9 @@
                         renderBizCompletionChart(bizPlans);
                         renderBizDeptChart(bizPlans);
                     });
+
+                    // 加载并渲染经营计划完成日期调整瀑布图
+                    fetchBizFinishDateCompare();
 
                     // 加载并渲染交付计划图表
                     fetchDeliveryStats();
