@@ -474,7 +474,7 @@
                 重点任务（表格版）
             </a>
             <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
-                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                 操作日志
             </a>
         </div>
@@ -570,9 +570,22 @@
                             <th>用户</th>
                             <th>批次</th>
                             <th>架次</th>
+                            <th>分配命令</th>
+                            <th>大纲计划</th>
+                            <th>科研转场计划</th>
+                            <th>铅封</th>
+                            <th>进入接装</th>
+                            <th>检飞</th>
+                            <th>转试</th>
+                            <th>转场</th>
+                            <th>YH机号</th>
                             <th>当前进度</th>
                             <th>转场周期</th>
                             <th>接装问题数</th>
+                            <th>备忘录数</th>
+                            <th>备注</th>
+                            <th>创建时间</th>
+                            <th>更新时间</th>
                             <th class="col-actions">操作</th>
                         </tr>
                     </thead>
@@ -841,9 +854,22 @@
                         <td title="${plan.user_name || ''}">${plan.user_name || '-'}</td>
                         <td title="${plan.batch_no || ''}">${plan.batch_no || '-'}</td>
                         <td title="${plan.sortie_no || ''}">${plan.sortie_no || '-'}</td>
+                        <td title="${plan.assign_command || ''}">${plan.assign_command || '-'}</td>
+                        <td title="${plan.outline_plan || ''}">${plan.outline_plan || '-'}</td>
+                        <td title="${plan.research_transfer_plan || ''}">${plan.research_transfer_plan || '-'}</td>
+                        <td title="${plan.lead_seal || ''}">${plan.lead_seal || '-'}</td>
+                        <td title="${plan.enter_acceptance || ''}">${plan.enter_acceptance || '-'}</td>
+                        <td title="${plan.test_flight || ''}">${plan.test_flight || '-'}</td>
+                        <td title="${plan.transfer_test || ''}">${plan.transfer_test || '-'}</td>
+                        <td title="${plan.transfer_field || ''}">${plan.transfer_field || '-'}</td>
+                        <td title="${plan.yh_plane_no || ''}">${plan.yh_plane_no || '-'}</td>
                         <td title="${plan.current_progress || ''}">${plan.current_progress || '-'}</td>
                         <td title="${plan.transfer_cycle || ''}">${plan.transfer_cycle || '-'}</td>
                         <td>${plan.acceptance_issue_count || 0}</td>
+                        <td>${plan.memo_count || 0}</td>
+                        <td title="${plan.remark || ''}">${plan.remark || '-'}</td>
+                        <td>${formatDateTime(plan.create_time)}</td>
+                        <td>${formatDateTime(plan.update_time)}</td>
                         <td class="col-actions">
                             <button class="action-btn edit" onclick="editPlan(${plan.id})">编辑</button>
                             <button class="action-btn delete" onclick="deletePlan(${plan.id})">删除</button>
@@ -859,6 +885,11 @@
             if (typeof dateStr === 'string' && dateStr.includes('-')) {
                 return dateStr.split(' ')[0];
             }
+            return dateStr;
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
             return dateStr;
         }
 

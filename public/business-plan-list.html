@@ -474,7 +474,7 @@
                 重点任务（表格版）
             </a>
             <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
-                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
                 操作日志
             </a>
         </div>
@@ -585,6 +585,8 @@
                             <th class="col-date">预计完成时间</th>
                             <th class="col-status">完成情况</th>
                             <th class="col-new">是否本期新增</th>
+                            <th class="col-date">创建时间</th>
+                            <th class="col-date">更新时间</th>
                             <th class="col-actions">操作</th>
                         </tr>
                     </thead>
@@ -831,7 +833,7 @@
             if (plans.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9">
+                        <td colspan="11">
                             <div class="empty-state">
                                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                                 <p>暂无经营计划数据</p>
@@ -864,6 +866,8 @@
                         <td class="col-new">
                             ${isNew ? '<span class="new-tag">是</span>' : '<span style="color:#9ca3af;font-size:12px;">否</span>'}
                         </td>
+                        <td class="col-date">${formatDateTime(plan.create_time)}</td>
+                        <td class="col-date">${formatDateTime(plan.update_time)}</td>
                         <td class="col-actions">
                             <button class="action-btn edit" onclick="editPlan(${plan.id})">编辑</button>
                             <button class="action-btn delete" onclick="deletePlan(${plan.id})">删除</button>
@@ -879,6 +883,11 @@
             if (typeof dateStr === 'string' && dateStr.includes('-')) {
                 return dateStr.split(' ')[0];
             }
+            return dateStr;
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
             return dateStr;
         }
 
