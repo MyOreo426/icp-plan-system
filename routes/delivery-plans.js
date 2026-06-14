@@ -341,7 +341,7 @@ router.get('/stats/outline-by-month', (req, res) => {
     const data = [];
     for (let m = 1; m <= 12; m++) {
       const mStr = m.toString().padStart(2, '0');
-      data.push(monthData[mStr]?.[type] || 0);
+      data.push((monthData[mStr] && monthData[mStr][type]) || 0);
     }
     return {
       name: type,
@@ -422,7 +422,7 @@ router.get('/stats/research-transfer-by-month', (req, res) => {
     const data = [];
     for (let m = 1; m <= 12; m++) {
       const mStr = m.toString().padStart(2, '0');
-      data.push(monthData[mStr]?.[type] || 0);
+      data.push((monthData[mStr] && monthData[mStr][type]) || 0);
     }
     return {
       name: type,
@@ -470,10 +470,10 @@ router.get('/stats/summary', (req, res) => {
   `).get();
 
   return success(res, {
-    total: totalResult?.total || 0,
-    yearOutlineCount: outlineResult?.count || 0,
-    yearResearchTransferCount: researchResult?.count || 0,
-    productTypeCount: typeResult?.count || 0,
+    total: (totalResult && totalResult.total) || 0,
+    yearOutlineCount: (outlineResult && outlineResult.count) || 0,
+    yearResearchTransferCount: (researchResult && researchResult.count) || 0,
+    productTypeCount: (typeResult && typeResult.count) || 0,
     year: currentYear
   });
 });
