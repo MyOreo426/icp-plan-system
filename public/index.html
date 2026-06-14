@@ -133,50 +133,17 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Dashboard Layout - 三大板块 */
+        /* Dashboard Layout - 两行四列网格 */
         .dashboard-container {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             padding: 0 20px 20px;
             max-width: 1600px;
             margin: 0 auto;
         }
-        .dashboard-section {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 4px;
-        }
-        .section-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-        .section-icon.biz { background: #dbeafe; }
-        .section-icon.delivery { background: #d1fae5; }
-        .section-icon.task { background: #fce7f3; }
-        .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-        .section-badge {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: #f3f4f6;
-            color: #6b7280;
-            margin-left: auto;
+        .chart-card.wide {
+            grid-column: span 2;
         }
 
         /* Chart Cards */
@@ -449,82 +416,69 @@
             <div class="loading-spinner"></div>
         </div>
 
-        <!-- Dashboard - 三大板块 -->
+        <!-- Dashboard - 两行四列网格 -->
         <div class="dashboard-container">
-            <!-- 第一列：经营计划板块 -->
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <div class="section-icon biz">📊</div>
-                    <div class="section-title">经营计划</div>
-                    <div class="section-badge" id="bizCountBadge">0项</div>
+            <!-- 1. 经营计划完成情况 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    经营计划完成情况
+                    <span class="category-tag">按类型</span>
                 </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        完成情况
-                        <span class="category-tag">按类型</span>
-                    </div>
-                    <div class="chart-wrapper" id="chartBizCompletion"></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        分布情况
-                        <span class="category-tag">按部门</span>
-                    </div>
-                    <div class="chart-wrapper" id="chartBizDept"></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        完成日期调整分布
-                        <span class="category-tag">月度</span>
-                    </div>
-                    <div class="chart-wrapper tall" id="chartBizFinishDateCompare"></div>
-                </div>
+                <div class="chart-wrapper" id="chartBizCompletion"></div>
             </div>
 
-            <!-- 第二列：交付计划板块 -->
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <div class="section-icon delivery">📦</div>
-                    <div class="section-title">交付计划</div>
-                    <div class="section-badge" id="deliveryCountBadge">0项</div>
+            <!-- 2. 经营计划分布情况 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    经营计划分布情况
+                    <span class="category-tag">按部门</span>
                 </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        大纲计划月度分布
-                        <span class="category-tag">按月</span>
-                    </div>
-                    <div class="chart-wrapper" id="chartDeliveryOutline"></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        转场计划月度分布
-                        <span class="category-tag">按月</span>
-                    </div>
-                    <div class="chart-wrapper" id="chartDeliveryTransfer"></div>
-                </div>
+                <div class="chart-wrapper" id="chartBizDept"></div>
             </div>
 
-            <!-- 第三列：重点任务板块 -->
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <div class="section-icon task">🎯</div>
-                    <div class="section-title">重点任务</div>
-                    <div class="section-badge" id="taskCountBadge">0项</div>
+            <!-- 3+4. 经营计划月度调整分布（跨2列） -->
+            <div class="chart-card wide">
+                <div class="chart-title">
+                    经营计划月度调整分布
+                    <span class="category-tag">按月</span>
                 </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        完成情况
-                        <span class="category-tag">状态分布</span>
-                    </div>
-                    <div class="chart-wrapper" id="chartStatus"></div>
+                <div class="chart-wrapper tall" id="chartBizFinishDateCompare"></div>
+            </div>
+
+            <!-- 5. 交付大纲计划月度分布 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    交付大纲计划月度分布
+                    <span class="category-tag">按月</span>
                 </div>
-                <div class="chart-card">
-                    <div class="chart-title">
-                        超期预警
-                        <span class="category-tag">7天内</span>
-                    </div>
-                    <div class="warning-list" id="warningList"></div>
+                <div class="chart-wrapper" id="chartDeliveryOutline"></div>
+            </div>
+
+            <!-- 6. 转场计划月度分布 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    转场计划月度分布
+                    <span class="category-tag">按月</span>
                 </div>
+                <div class="chart-wrapper" id="chartDeliveryTransfer"></div>
+            </div>
+
+            <!-- 7. 重点任务状态分布 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    重点任务状态分布
+                    <span class="category-tag">状态</span>
+                </div>
+                <div class="chart-wrapper" id="chartStatus"></div>
+            </div>
+
+            <!-- 8. 重点任务超期预警 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    重点任务超期预警
+                    <span class="category-tag">7天内</span>
+                </div>
+                <div class="warning-list" id="warningList"></div>
             </div>
         </div>
     </div>
@@ -726,11 +680,9 @@
             chartInstances.bizFinishDateCompare = echarts.init(document.getElementById('chartBizFinishDateCompare'));
         }
 
-        // 更新板块数量徽章
+        // 更新板块数量徽章（已移除板块标题，暂保留函数兼容）
         function updateSectionBadges(taskCount, bizCount, deliveryCount) {
-            document.getElementById('taskCountBadge').textContent = taskCount + '项';
-            document.getElementById('bizCountBadge').textContent = bizCount + '项';
-            document.getElementById('deliveryCountBadge').textContent = deliveryCount + '项';
+            // 徽章已随板块标题移除，如需恢复可在此处添加逻辑
         }
 
         // Render status pie chart
