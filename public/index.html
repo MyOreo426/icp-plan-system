@@ -1162,7 +1162,7 @@
                     headers: getHeaders()
                 });
                 const data = await res.json();
-                if (data.code === 0) {
+                if (data.code === 200) {
                     renderBizFinishDateCompareChart(data.data);
                 }
             } catch (e) {
@@ -1311,10 +1311,10 @@
                     fetch(API_BASE + '/delivery-plans/stats/research-transfer-by-month', { headers }).then(r => r.json())
                 ]);
 
-                if (outlineRes.code === 0) {
+                if (outlineRes.code === 200) {
                     renderDeliveryOutlineChart(outlineRes.data);
                 }
-                if (transferRes.code === 0) {
+                if (transferRes.code === 200) {
                     renderDeliveryTransferChart(transferRes.data);
                 }
             } catch (e) {
