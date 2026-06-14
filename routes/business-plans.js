@@ -131,7 +131,7 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
   const db = getDb();
-  const { plan_name, plan_type, department, issue_date, expected_finish_date, completion_status, is_new_period } = req.body;
+  const { plan_name, plan_type, department, issue_date, expected_finish_date, plan_finish_date, completion_status, is_new_period } = req.body;
 
   if (!plan_name) {
     return error(res, 400, '计划名称不能为空');
@@ -140,14 +140,15 @@ router.post('/', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
   const result = db.prepare(`
     INSERT INTO business_plan (
       plan_name, plan_type, department, issue_date,
-      expected_finish_date, completion_status, is_new_period, creator_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      expected_finish_date, plan_finish_date, completion_status, is_new_period, creator_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     plan_name,
     plan_type || null,
     department || null,
     issue_date || null,
     expected_finish_date || null,
+    plan_finish_date || null,
     completion_status || '未完成',
     is_new_period ? 1 : 0,
     req.user.id
@@ -173,7 +174,7 @@ router.post('/', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
 router.put('/:id', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
   const db = getDb();
   const { id } = req.params;
-  const { plan_name, plan_type, department, issue_date, expected_finish_date, completion_status, is_new_period } = req.body;
+  const { plan_name, plan_type, department, issue_date, expected_finish_date, plan_finish_date, completion_status, is_new_period } = req.body;
 
   const existing = db.prepare('SELECT * FROM business_plan WHERE id = ?').get(id);
   if (!existing) {
@@ -187,6 +188,7 @@ router.put('/:id', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
       department = ?,
       issue_date = ?,
       expected_finish_date = ?,
+      plan_finish_date = ?,
       completion_status = ?,
       is_new_period = ?,
       update_time = datetime('now')
@@ -197,6 +199,7 @@ router.put('/:id', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) => {
     department !== undefined ? department : existing.department,
     issue_date !== undefined ? issue_date : existing.issue_date,
     expected_finish_date !== undefined ? expected_finish_date : existing.expected_finish_date,
+    plan_finish_date !== undefined ? plan_finish_date : existing.plan_finish_date,
     completion_status !== undefined ? completion_status : existing.completion_status,
     is_new_period !== undefined ? (is_new_period ? 1 : 0) : existing.is_new_period,
     id
@@ -269,6 +272,7 @@ router.post('/import', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) =>
     department: ['责任科室', '科室', '部门', 'department', 'dept'],
     issue_date: ['计划下达日期', '下达日期', '发布日期', '开始日期', 'issue_date', 'issueDate'],
     expected_finish_date: ['预计完成时间', '预计完成日期', '完成日期', '截止日期', 'expected_finish_date', 'expectedFinishDate'],
+    plan_finish_date: ['计划完成日期', '计划完成时间', '计划日期', 'plan_finish_date', 'planFinishDate'],
     completion_status: ['完成情况', '完成状态', '状态', 'completion_status', 'completionStatus'],
     is_new_period: ['是否本期新增', '本期新增', '是否新增', '新增', 'is_new_period', 'isNewPeriod']
   };
@@ -296,6 +300,7 @@ router.post('/import', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) =>
       const department = getFieldValue(item, 'department') || null;
       const issueDate = getFieldValue(item, 'issue_date') || null;
       const expectedFinishDate = getFieldValue(item, 'expected_finish_date') || null;
+      const planFinishDate = getFieldValue(item, 'plan_finish_date') || null;
       let completionStatus = getFieldValue(item, 'completion_status') || '未完成';
       let isNewPeriod = getFieldValue(item, 'is_new_period');
 
@@ -336,14 +341,15 @@ router.post('/import', requireRole('LEADER', 'DIRECTOR', 'ADMIN'), (req, res) =>
       db.prepare(`
         INSERT INTO business_plan (
           plan_name, plan_type, department, issue_date,
-          expected_finish_date, completion_status, is_new_period, creator_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          expected_finish_date, plan_finish_date, completion_status, is_new_period, creator_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         planName,
         planType,
         department,
         formatDate(issueDate),
         formatDate(expectedFinishDate),
+        formatDate(planFinishDate),
         completionStatus,
         isNewPeriod,
         req.user.id

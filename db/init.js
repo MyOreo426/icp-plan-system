@@ -369,6 +369,7 @@ async function initDatabase() {
         department VARCHAR(100),
         issue_date DATE,
         expected_finish_date DATE,
+        plan_finish_date DATE,
         completion_status VARCHAR(20) DEFAULT '未完成',
         is_new_period INTEGER DEFAULT 0,
         creator_id INTEGER,
@@ -377,6 +378,16 @@ async function initDatabase() {
       )
     `);
     console.log('✓ business_plan 表创建完成');
+
+    // 迁移：添加 plan_finish_date 字段（兼容旧数据库）
+    try {
+      var checkCol = database.prepare('SELECT plan_finish_date FROM business_plan LIMIT 1');
+      checkCol.get();
+      checkCol.free();
+    } catch (err) {
+      database.run('ALTER TABLE business_plan ADD COLUMN plan_finish_date DATE');
+      console.log('✓ business_plan 表新增 plan_finish_date 字段');
+    }
 
     // 创建交付计划表
     database.run(`

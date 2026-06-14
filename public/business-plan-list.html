@@ -583,6 +583,7 @@
                             <th class="col-dept">责任科室</th>
                             <th class="col-date">计划下达日期</th>
                             <th class="col-date">预计完成时间</th>
+                            <th class="col-date">计划完成日期</th>
                             <th class="col-status">完成情况</th>
                             <th class="col-new">是否本期新增</th>
                             <th class="col-date">创建时间</th>
@@ -860,6 +861,7 @@
                         <td class="col-dept">${plan.department || '-'}</td>
                         <td class="col-date">${formatDate(plan.issue_date)}</td>
                         <td class="col-date">${formatDate(plan.expected_finish_date)}</td>
+                        <td class="col-date">${formatDate(plan.plan_finish_date)}</td>
                         <td class="col-status">
                             <span class="status-badge ${statusClass}">${plan.completion_status || '未完成'}</span>
                         </td>

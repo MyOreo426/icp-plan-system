@@ -22,7 +22,13 @@ function seedBusinessPlans(db) {
         var duration = 30 + Math.floor(Math.random() * 120);
         var finishDate = new Date(issueDate);
         finishDate.setDate(finishDate.getDate() + duration);
-        var finishDateStr = finishDate.toISOString().split('T')[0];
+        var finishDateStr = formatDate(finishDate);
+
+        // 计划完成日期：在预计完成日期基础上有±15天波动
+        var planFinishDate = new Date(finishDate);
+        var dayOffset = Math.floor(Math.random() * 31) - 15; // -15 到 +15 天
+        planFinishDate.setDate(planFinishDate.getDate() + dayOffset);
+        var planFinishDateStr = formatDate(planFinishDate);
 
         var status = statuses[Math.floor(Math.random() * statuses.length)];
         var isNew = Math.random() > 0.6 ? 1 : 0;
@@ -34,6 +40,7 @@ function seedBusinessPlans(db) {
           department: dept,
           issue_date: issueDate,
           expected_finish_date: finishDateStr,
+          plan_finish_date: planFinishDateStr,
           completion_status: status,
           is_new_period: isNew,
           creator_id: 1
@@ -43,12 +50,12 @@ function seedBusinessPlans(db) {
   }
 
   var stmt = db.prepare(
-    'INSERT INTO business_plan (id, plan_name, plan_type, department, issue_date, expected_finish_date, completion_status, is_new_period, creator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO business_plan (id, plan_name, plan_type, department, issue_date, expected_finish_date, plan_finish_date, completion_status, is_new_period, creator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
 
   for (var p = 0; p < plans.length; p++) {
     var plan = plans[p];
-    stmt.run(plan.id, plan.plan_name, plan.plan_type, plan.department, plan.issue_date, plan.expected_finish_date, plan.completion_status, plan.is_new_period, plan.creator_id);
+    stmt.run(plan.id, plan.plan_name, plan.plan_type, plan.department, plan.issue_date, plan.expected_finish_date, plan.plan_finish_date, plan.completion_status, plan.is_new_period, plan.creator_id);
   }
 }
 
