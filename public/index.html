@@ -102,11 +102,13 @@
         }
         .logout-btn:hover { background: rgba(255, 255, 255, 0.25); }
 
-        /* Main Content */
+        /* Main Content - 全屏铺满无滚动 */
         .main-content {
-            padding-top: 76px;
-            padding-bottom: 24px;
-            min-height: 100vh;
+            padding-top: 60px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         /* Loading State */
@@ -133,36 +135,44 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Dashboard Layout - 两行四列网格 */
+        /* Dashboard Layout - 两行四列网格，全屏铺满 */
         .dashboard-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            padding: 0 20px 20px;
-            max-width: 1600px;
-            margin: 0 auto;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            padding: 12px 16px;
+            flex: 1;
+            min-height: 0;
+            max-width: none;
+            margin: 0;
         }
         .chart-card.wide {
             grid-column: span 2;
         }
 
-        /* Chart Cards */
+        /* Chart Cards - 撑满格子 */
         .chart-card {
             background: white;
             border-radius: 10px;
-            padding: 14px 16px;
+            padding: 10px 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
         }
         .chart-title {
             font-size: 13px;
             font-weight: 600;
             color: #374151;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
             border-bottom: 1px solid #f3f4f6;
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-shrink: 0;
         }
         .chart-title .category-tag {
             font-size: 10px;
@@ -172,8 +182,13 @@
             color: #4f46e5;
             font-weight: 500;
         }
-        .chart-wrapper { height: 180px; position: relative; }
-        .chart-wrapper.tall { height: 220px; }
+        .chart-wrapper {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            width: 100%;
+        }
+        .chart-wrapper.tall { flex: 1; }
         .chart-wrapper.no-data::after {
             content: '暂无数据';
             position: absolute;
@@ -184,9 +199,10 @@
             font-size: 14px;
         }
 
-        /* Warning List */
+        /* Warning List - 撑满格子 */
         .warning-list {
-            max-height: 300px;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
         }
         .warning-item {
@@ -697,16 +713,17 @@
                 tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
                 legend: {
                     orient: 'vertical',
-                    right: '5%',
+                    right: '2%',
                     top: 'center',
-                    itemWidth: 12,
-                    itemHeight: 12,
-                    textStyle: { fontSize: 12 }
+                    itemWidth: 10,
+                    itemHeight: 10,
+                    textStyle: { fontSize: 11 },
+                    gap: 8
                 },
                 series: [{
                     type: 'pie',
-                    radius: ['45%', '70%'],
-                    center: ['35%', '50%'],
+                    radius: ['42%', '78%'],
+                    center: ['32%', '50%'],
                     avoidLabelOverlap: false,
                     itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
                     label: { show: false },
@@ -958,10 +975,10 @@
                     textStyle: { fontSize: 11 }
                 },
                 grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '15%',
-                    top: '10%',
+                    left: '2%',
+                    right: '2%',
+                    bottom: '14%',
+                    top: '6%',
                     containLabel: true
                 },
                 xAxis: {
@@ -979,6 +996,7 @@
                         type: 'bar',
                         stack: 'total',
                         data: completedData,
+                        barWidth: '45%',
                         itemStyle: { color: '#10b981' },
                         label: {
                             show: true,
@@ -1016,81 +1034,95 @@
             });
         }
 
-        // 渲染经营计划分部情况（按科室）
+        // 渲染经营计划分布情况（按科室+计划类型堆叠）
         function renderBizDeptChart(bizPlans) {
             if (!chartInstances.bizDept) return;
 
-            // 按责任科室统计
+            // 按科室+计划类型统计
             const deptMap = {};
+            const typeSet = new Set();
             bizPlans.forEach(p => {
                 const dept = p.department || '未分配';
+                const type = p.plan_type || '未分类';
+                typeSet.add(type);
                 if (!deptMap[dept]) {
-                    deptMap[dept] = { total: 0, completed: 0 };
+                    deptMap[dept] = { total: 0, types: {} };
                 }
                 deptMap[dept].total++;
-                if (p.completion_status === '已完成') {
-                    deptMap[dept].completed++;
+                if (!deptMap[dept].types[type]) {
+                    deptMap[dept].types[type] = 0;
                 }
+                deptMap[dept].types[type]++;
             });
 
             const depts = Object.keys(deptMap).sort((a, b) => deptMap[b].total - deptMap[a].total);
-            const totalData = depts.map(d => deptMap[d].total);
-            const completedData = depts.map(d => deptMap[d].completed);
-            const completionRates = depts.map(d => 
-                deptMap[d].total > 0 ? ((deptMap[d].completed / deptMap[d].total) * 100).toFixed(1) : 0
-            );
+            const planTypes = Array.from(typeSet).sort();
+
+            // 为每个计划类型生成一个series
+            const typeColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            const series = planTypes.map((type, index) => ({
+                name: type,
+                type: 'bar',
+                stack: 'total',
+                data: depts.map(dept => deptMap[dept].types[type] || 0),
+                itemStyle: { color: typeColors[index % typeColors.length] },
+                label: {
+                    show: true,
+                    position: 'inside',
+                    fontSize: 10,
+                    color: '#fff',
+                    formatter: function(params) {
+                        return params.value > 0 ? params.value : '';
+                    }
+                },
+                barWidth: '50%'
+            }));
 
             const option = {
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: { type: 'shadow' },
                     formatter: function(params) {
+                        if (!params || params.length === 0) return '';
                         const dept = params[0].name;
                         const info = deptMap[dept];
-                        const rate = info.total > 0 ? ((info.completed / info.total) * 100).toFixed(1) + '%' : '0%';
-                        return `${dept}<br/>总数: ${info.total}<br/>已完成: ${info.completed}<br/>完成率: ${rate}`;
+                        let html = `<strong>${dept}</strong><br/>总数: ${info.total}<br/>`;
+                        params.forEach(p => {
+                            if (p.value > 0) {
+                                html += `${p.marker} ${p.seriesName}: ${p.value}<br/>`;
+                            }
+                        });
+                        return html;
                     }
                 },
                 legend: {
-                    data: ['计划总数', '已完成数'],
+                    data: planTypes,
                     bottom: 0,
-                    textStyle: { fontSize: 11 }
+                    textStyle: { fontSize: 11 },
+                    type: 'scroll',
+                    pageIconSize: 10,
+                    pageTextStyle: { fontSize: 10 }
                 },
                 grid: {
                     left: '3%',
                     right: '4%',
-                    bottom: '15%',
-                    top: '10%',
+                    bottom: '18%',
+                    top: '8%',
                     containLabel: true
                 },
                 xAxis: {
                     type: 'category',
                     data: depts,
-                    axisLabel: { fontSize: 11, interval: 0, rotate: depts.length > 5 ? 30 : 0 }
+                    axisLabel: { fontSize: 11, interval: 0, rotate: depts.length > 4 ? 30 : 0 }
                 },
                 yAxis: {
                     type: 'value',
                     axisLabel: { fontSize: 11 }
                 },
-                series: [
-                    {
-                        name: '计划总数',
-                        type: 'bar',
-                        data: totalData,
-                        itemStyle: { color: '#3b82f6' },
-                        barWidth: '35%'
-                    },
-                    {
-                        name: '已完成数',
-                        type: 'bar',
-                        data: completedData,
-                        itemStyle: { color: '#10b981' },
-                        barWidth: '35%'
-                    }
-                ]
+                series: series
             };
 
-            chartInstances.bizDept.setOption(option);
+            chartInstances.bizDept.setOption(option, true);
             document.getElementById('chartBizDept').classList.toggle('no-data', depts.length === 0);
 
             // 双击跳转
@@ -1279,10 +1311,10 @@
                     textStyle: { fontSize: 11 }
                 },
                 grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '12%',
-                    top: '8%',
+                    left: '2%',
+                    right: '2%',
+                    bottom: '11%',
+                    top: '5%',
                     containLabel: true
                 },
                 xAxis: {
@@ -1299,7 +1331,7 @@
                 series: series
             };
 
-            chartInstances.bizFinishDateCompare.setOption(option);
+            chartInstances.bizFinishDateCompare.setOption(option, true);
 
             // 判断是否有数据
             var hasData = seriesData.some(function(s) {
@@ -1364,10 +1396,10 @@
                     textStyle: { fontSize: 10 }
                 },
                 grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '15%',
-                    top: '10%',
+                    left: '2%',
+                    right: '2%',
+                    bottom: '14%',
+                    top: '6%',
                     containLabel: true
                 },
                 xAxis: {
@@ -1382,7 +1414,7 @@
                 series: series
             };
 
-            chartInstances.deliveryOutline.setOption(option);
+            chartInstances.deliveryOutline.setOption(option, true);
             const hasData = data.series.some(s => s.data.some(v => v > 0));
             document.getElementById('chartDeliveryOutline').classList.toggle('no-data', !hasData);
 
@@ -1416,10 +1448,10 @@
                     textStyle: { fontSize: 10 }
                 },
                 grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '15%',
-                    top: '10%',
+                    left: '2%',
+                    right: '2%',
+                    bottom: '14%',
+                    top: '6%',
                     containLabel: true
                 },
                 xAxis: {
@@ -1434,7 +1466,7 @@
                 series: series
             };
 
-            chartInstances.deliveryTransfer.setOption(option);
+            chartInstances.deliveryTransfer.setOption(option, true);
             const hasData = data.series.some(s => s.data.some(v => v > 0));
             document.getElementById('chartDeliveryTransfer').classList.toggle('no-data', !hasData);
 
