@@ -63,7 +63,10 @@ router.get('/', (req, res) => {
     SELECT *
     FROM delivery_plan
     ${whereClause}
-    ORDER BY id DESC
+    ORDER BY 
+      CASE WHEN research_transfer_plan IS NULL OR research_transfer_plan = '' THEN 1 ELSE 0 END,
+      research_transfer_plan ASC,
+      id DESC
     LIMIT ? OFFSET ?
   `).all(...params, parseInt(pageSize), offset);
 

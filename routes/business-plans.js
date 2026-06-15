@@ -59,7 +59,10 @@ router.get('/', (req, res) => {
     SELECT *
     FROM business_plan
     ${whereClause}
-    ORDER BY id DESC
+    ORDER BY 
+      CASE WHEN issue_date IS NULL OR issue_date = '' THEN 1 ELSE 0 END,
+      issue_date ASC,
+      id DESC
     LIMIT ? OFFSET ?
   `).all(...params, parseInt(pageSize), offset);
 
