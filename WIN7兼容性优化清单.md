@@ -4,22 +4,42 @@
 
 ### 1. 前端 `?.` 可选链语法替换（42处）
 - **问题**：可选链 `?.` 是 ES2020 语法，老版本浏览器（Chrome < 80）不支持，会导致 JS 执行中断
-- **影响范围**：6个页面
-  - admin.html: 9处
-  - import-export.html: 3处
-  - operation-log.html: 4处
-  - plan-edit.html: 2处
-  - plan-list-excel.html: 17处
-  - plan-list.html: 7处
+- **影响范围**：9个页面
+  - index.html (仪表盘): 0处 ✓
+  - admin.html: 0处 ✓
+  - import-export.html: 0处 ✓
+  - operation-log.html: 0处 ✓
+  - plan-edit.html: 0处 ✓
+  - plan-list-excel.html: 0处 ✓
+  - plan-list.html: 0处 ✓
+  - business-plan-list.html: 0处 ✓
+  - delivery-plan-list.html: 0处 ✓
 - **修复方式**：全部替换为传统 `&&` 判断写法
   - 单链：`data.data?.list` → `(data.data && data.data.list)`
   - 双链：`event?.target?.classList` → `(event && event.target && event.target.classList)`
-  - 函数调用链：`row.querySelector('x')?.value?.trim()` → `(row.querySelector('x') && row.querySelector('x').value && row.querySelector('x').value.trim())`
 
-### 2. 后端 Node 12 兼容性（此前已完成）
-- 修复后端 `?.` 和 `??` 语法
-- sql.js 降级到 1.0.0
-- express-rate-limit 降级
+### 2. 后端 Node 12 兼容性
+- 修复后端 `?.` 和 `??` 语法 ✓（当前版本无此类语法）
+- sql.js 降级到 1.0.0 ✓
+- express-rate-limit 降级到 5.5.1 ✓
+- 所有路由文件（含新增的经营计划、交付计划）均兼容 Node 12 ✓
+
+### 3. 前端依赖本地化
+- ECharts 5.x 本地加载（echarts.min.js）✓
+- XLSX 本地加载（xlsx.full.min.js）✓
+- 无任何外部 CDN 依赖 ✓
+
+### 4. CSS 兼容性验证
+- Flex 布局：Chrome 29+ 支持 ✓
+- CSS Grid：Chrome 57+ 支持 ✓
+- `gap` 属性：Chrome 84+ 支持 ✓（Chrome 89 完全支持）
+- CSS 变量：Chrome 49+ 支持 ✓
+- 无 `backdrop-filter`、`aspect-ratio` 等高级特性 ✓
+
+### 5. 打包验证
+- pkg 打包目标：node12-win-x64 ✓
+- 输出文件：icp-system-win7-latest.exe（约36MB）✓
+- 打包时间：2026-06-15
 
 ## 待验证 / 待优化 ⏳
 

@@ -574,7 +574,7 @@
                     <option value="">全部</option>
                     <option value="已完成">已完成</option>
                     <option value="未完成">未完成</option>
-                    <option value="进行中">进行中</option>
+                    <option value="进行中">执行中</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -877,7 +877,7 @@
                         <td class="col-date">${formatDate(plan.expected_finish_date)}</td>
                         <td class="col-date">${formatDate(plan.plan_finish_date)}</td>
                         <td class="col-status">
-                            <span class="status-badge ${statusClass}">${plan.completion_status || '未完成'}</span>
+                            <span class="status-badge ${statusClass}">${plan.completion_status === '进行中' ? '执行中' : (plan.completion_status || '未完成')}</span>
                         </td>
                         <td class="col-new">
                             ${isNew ? '<span class="new-tag">是</span>' : '<span style="color:#9ca3af;font-size:12px;">否</span>'}

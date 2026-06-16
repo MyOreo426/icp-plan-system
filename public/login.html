@@ -6,50 +6,365 @@
     <title>登录 - 计划管理系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        
+        .login-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
         }
-        .login-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 420px;
-            padding: 50px 40px;
-        }
-        .logo-section { text-align: center; margin-bottom: 40px; }
-        .logo {
-            width: 70px;
-            height: 70px;
+        
+        /* 左侧品牌区 */
+        .brand-section {
+            position: relative;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            overflow: hidden;
+        }
+        
+        /* 装饰网格 */
+        .brand-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        
+        /* 装饰光晕 */
+        .brand-blur-1 {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            filter: blur(80px);
+            top: 10%;
+            right: 20%;
+            animation: float1 8s ease-in-out infinite;
+        }
+        .brand-blur-2 {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            filter: blur(100px);
+            bottom: 10%;
+            left: 10%;
+            animation: float2 10s ease-in-out infinite;
+        }
+        
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, 30px); }
+        }
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(40px, -20px); }
+        }
+        
+        /* 品牌Logo */
+        .brand-logo {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            margin-bottom: 60px;
+        }
+        .brand-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
         }
-        .logo svg { width: 42px; height: 42px; fill: white; }
-        h1 { color: #2c3e50; font-size: 26px; font-weight: 600; margin-bottom: 8px; }
-        .subtitle { color: #95a5a6; font-size: 14px; }
-        .form-group { margin-bottom: 24px; }
-        label { display: block; color: #34495e; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
-        input[type="text"], input[type="password"] {
+        .brand-logo-icon svg { width: 24px; height: 24px; fill: white; }
+        .brand-logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        /* 互动角色区域 */
+        .characters-container {
+            position: relative;
+            z-index: 2;
+            width: 500px;
+            height: 380px;
+        }
+        
+        /* 角色基类 */
+        .character {
+            position: absolute;
+            bottom: 0;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* 紫色角色 - 后面 */
+        .char-purple {
+            left: 60px;
+            width: 160px;
+            height: 380px;
+            background: linear-gradient(180deg, #7C4FF5 0%, #5B2FD6 100%);
+            border-radius: 12px 12px 0 0;
+            z-index: 1;
+        }
+        .char-purple.typing {
+            transform: scaleY(1.12) translateY(-20px);
+        }
+        
+        /* 黑色角色 - 中间 */
+        .char-dark {
+            left: 210px;
+            width: 110px;
+            height: 300px;
+            background: linear-gradient(180deg, #3D3D3D 0%, #1D1D1D 100%);
+            border-radius: 8px 8px 0 0;
+            z-index: 2;
+        }
+        
+        /* 橙色角色 - 左前 */
+        .char-orange {
+            left: 0;
+            width: 220px;
+            height: 200px;
+            background: linear-gradient(180deg, #FFA07A 0%, #FF8C5A 100%);
+            border-radius: 110px 110px 0 0;
+            z-index: 3;
+        }
+        
+        /* 黄色角色 - 右前 */
+        .char-yellow {
+            left: 290px;
+            width: 130px;
+            height: 220px;
+            background: linear-gradient(180deg, #F0E68C 0%, #D4C940 100%);
+            border-radius: 65px 65px 0 0;
+            z-index: 4;
+        }
+        
+        /* 眼睛容器 */
+        .eyes {
+            position: absolute;
+            display: flex;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        /* 眼白 */
+        .eye {
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: height 0.1s;
+        }
+        
+        /* 瞳孔 */
+        .pupil {
+            background: #2D2D2D;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.1s ease-out;
+        }
+        
+        /* 紫色角色眼睛 */
+        .char-purple .eyes {
+            left: 35px;
+            top: 45px;
+        }
+        .char-purple .eye {
+            width: 22px;
+            height: 22px;
+        }
+        .char-purple .pupil {
+            width: 10px;
+            height: 10px;
+        }
+        
+        /* 黑色角色眼睛 */
+        .char-dark .eyes {
+            left: 22px;
+            top: 35px;
+        }
+        .char-dark .eye {
+            width: 20px;
+            height: 20px;
+        }
+        .char-dark .pupil {
+            width: 9px;
+            height: 9px;
+        }
+        
+        /* 橙色角色眼睛 */
+        .char-orange .eyes {
+            left: 60px;
+            top: 75px;
+        }
+        .char-orange .eye {
+            width: 24px;
+            height: 24px;
+        }
+        .char-orange .pupil {
+            width: 12px;
+            height: 12px;
+        }
+        
+        /* 黄色角色眼睛 + 嘴巴 */
+        .char-yellow .eyes {
+            left: 30px;
+            top: 40px;
+        }
+        .char-yellow .eye {
+            width: 22px;
+            height: 22px;
+        }
+        .char-yellow .pupil {
+            width: 11px;
+            height: 11px;
+        }
+        .char-yellow .mouth {
+            position: absolute;
+            width: 40px;
+            height: 5px;
+            background: #2D2D2D;
+            border-radius: 3px;
+            left: 26px;
+            top: 85px;
+        }
+        
+        /* 眨眼动画 */
+        .eye.blink {
+            height: 3px !important;
+        }
+        .eye.blink .pupil {
+            opacity: 0;
+        }
+        
+        /* 害羞躲避效果 - 紫色角色 */
+        .char-purple.hiding {
+            transform: translateX(50px) skewX(-8deg);
+        }
+        .char-purple.hiding .eyes {
+            left: 60px !important;
+        }
+        .char-purple.hiding .eye:first-child .pupil {
+            transform: translate(-4px, -4px);
+        }
+        .char-purple.hiding .eye:last-child .pupil {
+            transform: translate(-4px, -4px);
+        }
+        
+        /* 右侧品牌文字 */
+        .brand-text {
+            position: relative;
+            z-index: 2;
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+            margin-top: 50px;
+            display: flex;
+            gap: 24px;
+        }
+        .brand-text a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .brand-text a:hover {
+            color: rgba(255,255,255,0.9);
+        }
+        
+        /* 右侧登录区 */
+        .login-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            padding: 40px;
+        }
+        
+        .login-container {
             width: 100%;
-            padding: 14px 16px;
+            max-width: 380px;
+        }
+        
+        /* 移动端Logo */
+        .mobile-logo {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .mobile-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mobile-logo-icon svg { width: 20px; height: 20px; fill: white; }
+        .mobile-logo-text { font-size: 16px; font-weight: 600; color: #2c3e50; }
+        
+        /* 登录标题 */
+        .login-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .login-header h1 {
+            font-size: 26px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .login-header p {
+            color: #95a5a6;
+            font-size: 14px;
+        }
+        
+        /* 表单 */
+        .form-group {
+            margin-bottom: 22px;
+        }
+        .form-group label {
+            display: block;
+            color: #34495e;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 13px 15px;
             border: 2px solid #e0e6ed;
             border-radius: 10px;
             font-size: 15px;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             outline: none;
+            background: white;
         }
-        input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15); }
-        .password-wrapper { position: relative; }
+        .form-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+        .password-wrapper {
+            position: relative;
+        }
         .password-toggle {
             position: absolute;
             right: 14px;
@@ -57,7 +372,25 @@
             transform: translateY(-50%);
             cursor: pointer;
             color: #95a5a6;
+            font-size: 18px;
+            user-select: none;
         }
+        .password-toggle:hover { color: #667eea; }
+        
+        /* 错误提示 */
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error-message.show { display: block; }
+        
+        /* 登录按钮 - 悬停滑动效果 */
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -65,24 +398,44 @@
             border: none;
             border-radius: 10px;
             color: white;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
         }
-        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
-        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-        .error-message {
-            background: #fef2f2;
-            border: 1px solid #fca5a5;
-            color: #dc2626;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: none;
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
-        .error-message.show { display: block; }
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .login-btn .btn-text {
+            display: inline-block;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        .login-btn:hover .btn-text {
+            transform: translateX(-8px);
+            opacity: 0.7;
+        }
+        .login-btn .btn-arrow {
+            position: absolute;
+            right: 50%;
+            top: 50%;
+            transform: translate(50%, -50%) translateX(-30px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .login-btn:hover .btn-arrow {
+            transform: translate(50%, -50%) translateX(0);
+            opacity: 1;
+        }
+        
+        /* 测试账号 */
         .demo-accounts {
             margin-top: 30px;
             padding-top: 25px;
@@ -95,21 +448,36 @@
             letter-spacing: 1px;
             margin-bottom: 12px;
         }
-        .demo-list { display: flex; flex-direction: column; gap: 8px; }
+        .demo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
         .demo-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 12px;
-            background: #f8fafc;
+            background: white;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
-        .demo-item:hover { background: #f0f3ff; }
-        .demo-role { font-size: 13px; color: #34495e; font-weight: 500; }
-        .demo-account { font-size: 12px; color: #95a5a6; }
-
+        .demo-item:hover {
+            background: #f5f7ff;
+            border-color: #667eea;
+        }
+        .demo-role {
+            font-size: 13px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        .demo-account {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        
         /* 首次登录修改密码弹窗 */
         .modal {
             display: none;
@@ -161,76 +529,155 @@
         }
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #fff;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
             border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin-right: 8px;
             vertical-align: middle;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .login-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .brand-section {
+                display: none;
+            }
+            .mobile-logo {
+                display: flex;
+            }
+            .login-section {
+                padding: 30px 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo-section">
-            <div class="logo">
-                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <div class="login-wrapper">
+        <!-- 左侧品牌区 -->
+        <div class="brand-section">
+            <div class="brand-blur-1"></div>
+            <div class="brand-blur-2"></div>
+            
+            <div class="brand-logo">
+                <div class="brand-logo-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                </div>
+                <span class="brand-logo-text">计划管理系统</span>
             </div>
-            <h1>计划管理系统</h1>
-            <p class="subtitle">请登录您的账户</p>
+            
+            <!-- 互动角色 -->
+            <div class="characters-container">
+                <!-- 紫色角色 -->
+                <div class="character char-purple" id="charPurple">
+                    <div class="eyes">
+                        <div class="eye" id="purpleEye1"><div class="pupil"></div></div>
+                        <div class="eye" id="purpleEye2"><div class="pupil"></div></div>
+                    </div>
+                </div>
+                
+                <!-- 黑色角色 -->
+                <div class="character char-dark" id="charDark">
+                    <div class="eyes">
+                        <div class="eye" id="darkEye1"><div class="pupil"></div></div>
+                        <div class="eye" id="darkEye2"><div class="pupil"></div></div>
+                    </div>
+                </div>
+                
+                <!-- 橙色角色 -->
+                <div class="character char-orange" id="charOrange">
+                    <div class="eyes">
+                        <div class="eye" id="orangeEye1"><div class="pupil"></div></div>
+                        <div class="eye" id="orangeEye2"><div class="pupil"></div></div>
+                    </div>
+                </div>
+                
+                <!-- 黄色角色 -->
+                <div class="character char-yellow" id="charYellow">
+                    <div class="eyes">
+                        <div class="eye" id="yellowEye1"><div class="pupil"></div></div>
+                        <div class="eye" id="yellowEye2"><div class="pupil"></div></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            
+            <div class="brand-text">
+                <a href="#">隐私政策</a>
+                <a href="#">服务条款</a>
+            </div>
         </div>
-
-        <div class="error-message" id="errorMsg"></div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">工号</label>
-                <input type="text" id="username" name="username" placeholder="请输入工号" maxlength="20" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="password">密码</label>
-                <div class="password-wrapper">
-                    <input type="password" id="password" name="password" placeholder="请输入密码" required autocomplete="current-password">
-                    <span class="password-toggle" onclick="togglePassword()">👁️</span>
+        
+        <!-- 右侧登录区 -->
+        <div class="login-section">
+            <div class="login-container">
+                <!-- 移动端Logo -->
+                <div class="mobile-logo">
+                    <div class="mobile-logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    </div>
+                    <span class="mobile-logo-text">计划管理系统</span>
                 </div>
-            </div>
-            <button type="submit" class="login-btn" id="loginBtn">登录</button>
-        </form>
-
-        <div class="demo-accounts">
-            <div class="demo-title">测试账号</div>
-            <div class="demo-list">
-                <div class="demo-item" onclick="fillDemo('000000', 'admin123')">
-                    <span class="demo-role">⚙️ 管理员</span>
-                    <span class="demo-account">工号: 000000 / 密码: admin123</span>
+                
+                <div class="login-header">
+                    <h1>欢迎回来</h1>
+                    <p>请登录您的账户</p>
                 </div>
-                <div class="demo-item" onclick="fillDemo('MY', 'leader123')">
-                    <span class="demo-role">👥 组长（综合计划组）</span>
-                    <span class="demo-account">工号: MY / 密码: leader123</span>
-                </div>
-                <div class="demo-item" onclick="fillDemo('DH', 'leader123')">
-                    <span class="demo-role">👥 组长（客户管理组）</span>
-                    <span class="demo-account">工号: DH / 密码: leader123</span>
-                </div>
-                <div class="demo-item" onclick="fillDemo('ZR', 'director123')">
-                    <span class="demo-role">🎯 主任</span>
-                    <span class="demo-account">工号: ZR / 密码: director123</span>
-                </div>
-                <div class="demo-item" onclick="fillDemo('ZZY', 'member123')">
-                    <span class="demo-role">👤 组员（综合计划组）</span>
-                    <span class="demo-account">工号: ZZY / 密码: member123</span>
-                </div>
-                <div class="demo-item" onclick="fillDemo('A1', 'member123')">
-                    <span class="demo-role">👤 组员（客户管理组）</span>
-                    <span class="demo-account">工号: A1 / 密码: member123</span>
+                
+                <div class="error-message" id="errorMsg"></div>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">工号</label>
+                        <input type="text" class="form-input" id="username" name="username" placeholder="请输入工号" maxlength="20" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <div class="password-wrapper">
+                            <input type="password" class="form-input" id="password" name="password" placeholder="请输入密码" required autocomplete="current-password">
+                            <span class="password-toggle" id="passwordToggle" title="显示/隐藏密码">👁️</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="login-btn" id="loginBtn">
+                        <span class="btn-text">登 录</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                </form>
+                
+                <div class="demo-accounts">
+                    <div class="demo-title">测试账号</div>
+                    <div class="demo-list">
+                        <div class="demo-item" onclick="fillDemo('000000', 'admin123')">
+                            <span class="demo-role">⚙️ 管理员</span>
+                            <span class="demo-account">000000 / admin123</span>
+                        </div>
+                        <div class="demo-item" onclick="fillDemo('MY', 'leader123')">
+                            <span class="demo-role">👥 组长（综合计划组）</span>
+                            <span class="demo-account">MY / leader123</span>
+                        </div>
+                        <div class="demo-item" onclick="fillDemo('DH', 'leader123')">
+                            <span class="demo-role">👥 组长（客户管理组）</span>
+                            <span class="demo-account">DH / leader123</span>
+                        </div>
+                        <div class="demo-item" onclick="fillDemo('ZR', 'director123')">
+                            <span class="demo-role">🏢 主任</span>
+                            <span class="demo-account">ZR / director123</span>
+                        </div>
+                        <div class="demo-item" onclick="fillDemo('ZZY', 'member123')">
+                            <span class="demo-role">👤 组员</span>
+                            <span class="demo-account">ZZY / member123</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <!-- 首次登录修改密码弹窗 -->
     <div class="modal" id="passwordModal">
         <div class="modal-content">
@@ -238,35 +685,132 @@
             <form id="passwordForm">
                 <div class="form-group">
                     <label for="newPassword">新密码</label>
-                    <input type="password" id="newPassword" name="newPassword" placeholder="请输入新密码（至少6位）" minlength="6" required>
+                    <input type="password" class="form-input" id="newPassword" name="newPassword" placeholder="请输入新密码（至少6位）" minlength="6" required>
                 </div>
                 <div class="form-group">
                     <label for="confirmPassword">确认密码</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入新密码" minlength="6" required>
+                    <input type="password" class="form-input" id="confirmPassword" name="confirmPassword" placeholder="请再次输入新密码" minlength="6" required>
                 </div>
                 <div id="passwordModalError" style="color:#e74c3c;font-size:13px;margin-top:10px;display:none;"></div>
-            <div class="modal-actions">
+                <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="logout()">取消</button>
                     <button type="submit" class="btn btn-primary">确认修改</button>
                 </div>
             </form>
         </div>
     </div>
-
+    
     <script>
-        // API基础路径
         const API_BASE = '/api';
-
-        // 页面加载时检查是否已登录
+        
+        // ========== 互动角色系统 ==========
+        const mouseState = { x: 0, y: 0 };
+        let isTyping = false;
+        let passwordVisible = false;
+        let passwordLength = 0;
+        
+        // 鼠标跟随
+        document.addEventListener('mousemove', function(e) {
+            mouseState.x = e.clientX;
+            mouseState.y = e.clientY;
+            updatePupils();
+        });
+        
+        // 更新所有瞳孔位置
+        function updatePupils() {
+            const pupils = document.querySelectorAll('.pupil');
+            pupils.forEach(function(pupil) {
+                const eye = pupil.parentElement;
+                const rect = eye.getBoundingClientRect();
+                const eyeCenterX = rect.left + rect.width / 2;
+                const eyeCenterY = rect.top + rect.height / 2;
+                
+                const deltaX = mouseState.x - eyeCenterX;
+                const deltaY = mouseState.y - eyeCenterY;
+                
+                const maxDist = 4;
+                const dist = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), maxDist);
+                const angle = Math.atan2(deltaY, deltaX);
+                
+                const x = Math.cos(angle) * dist;
+                const y = Math.sin(angle) * dist;
+                
+                pupil.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+            });
+        }
+        
+        // 随机眨眼
+        function startBlinking() {
+            setInterval(function() {
+                const eyes = document.querySelectorAll('.eye');
+                eyes.forEach(function(eye) {
+                    eye.classList.add('blink');
+                    setTimeout(function() {
+                        eye.classList.remove('blink');
+                    }, 120);
+                });
+            }, 3000 + Math.random() * 2000);
+        }
+        startBlinking();
+        
+        // 输入状态监听
+        document.getElementById('username').addEventListener('focus', function() {
+            isTyping = true;
+            document.getElementById('charPurple').classList.add('typing');
+        });
+        document.getElementById('username').addEventListener('blur', function() {
+            isTyping = false;
+            document.getElementById('charPurple').classList.remove('typing');
+        });
+        
+        document.getElementById('password').addEventListener('focus', function() {
+            isTyping = true;
+            document.getElementById('charPurple').classList.add('typing');
+            if (passwordLength > 0 && !passwordVisible) {
+                document.getElementById('charPurple').classList.add('hiding');
+            }
+        });
+        document.getElementById('password').addEventListener('blur', function() {
+            isTyping = false;
+            document.getElementById('charPurple').classList.remove('typing');
+            document.getElementById('charPurple').classList.remove('hiding');
+        });
+        document.getElementById('password').addEventListener('input', function() {
+            passwordLength = this.value.length;
+            if (passwordLength > 0 && !passwordVisible) {
+                document.getElementById('charPurple').classList.add('hiding');
+            } else {
+                document.getElementById('charPurple').classList.remove('hiding');
+            }
+        });
+        
+        // 密码可见性切换
+        document.getElementById('passwordToggle').addEventListener('click', function() {
+            const pwd = document.getElementById('password');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                passwordVisible = true;
+                this.textContent = '🙈';
+                document.getElementById('charPurple').classList.remove('hiding');
+            } else {
+                pwd.type = 'password';
+                passwordVisible = false;
+                this.textContent = '👁️';
+                if (passwordLength > 0) {
+                    document.getElementById('charPurple').classList.add('hiding');
+                }
+            }
+        });
+        
+        // ========== 页面初始化 ==========
         document.addEventListener('DOMContentLoaded', function() {
             const token = sessionStorage.getItem('token');
             if (token) {
-                // 验证token是否有效
-                fetch(`${API_BASE}/user/info`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }).then(res => res.json()).then(data => {
+                fetch(API_BASE + '/user/info', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }).then(function(res) { return res.json(); })
+                  .then(function(data) {
                     if (data.code === 200) {
-                        // token有效，检查是否需要修改密码
                         if (data.data.must_change_password === 1) {
                             document.getElementById('passwordModal').classList.add('show');
                         } else {
@@ -276,125 +820,122 @@
                         sessionStorage.removeItem('token');
                         sessionStorage.removeItem('user');
                     }
-                }).catch(() => {
+                }).catch(function() {
                     sessionStorage.removeItem('token');
                     sessionStorage.removeItem('user');
                 });
             }
         });
-
+        
         // 填充测试账号
         function fillDemo(username, password) {
             document.getElementById('username').value = username;
             document.getElementById('password').value = password;
         }
-
-        // 切换密码显示
-        function togglePassword() {
-            const pwd = document.getElementById('password');
-            pwd.type = pwd.type === 'password' ? 'text' : 'password';
-        }
-
-        // 显示错误信息
+        
+        // 显示错误
         function showError(msg) {
-            const el = document.getElementById('errorMsg');
+            var el = document.getElementById('errorMsg');
             el.textContent = msg;
             el.classList.add('show');
-            setTimeout(() => el.classList.remove('show'), 5000);
+            setTimeout(function() { el.classList.remove('show'); }, 5000);
         }
-
+        
         // 登录表单提交
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const btn = document.getElementById('loginBtn');
+            var btn = document.getElementById('loginBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span>登录中...';
-
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-
+            
+            var username = document.getElementById('username').value.trim();
+            var password = document.getElementById('password').value;
+            
             try {
-                const res = await fetch(`${API_BASE}/auth/login`, {
+                var res = await fetch(API_BASE + '/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ username: username, password: password })
                 });
-                const data = await res.json();
-
+                var data = await res.json();
+                
                 if (data.code === 200) {
                     sessionStorage.setItem('token', data.data.token);
                     sessionStorage.setItem('user', JSON.stringify(data.data.user));
-
-                    // 检查是否需要修改密码
+                    
                     if (data.data.user.must_change_password === 1) {
                         document.getElementById('passwordModal').classList.add('show');
-                        btn.innerHTML = '登录';
+                        btn.innerHTML = '<span class="btn-text">登 录</span><span class="btn-arrow">→</span>';
                         btn.disabled = false;
                     } else {
                         redirectByRole(data.data.user.role);
                     }
                 } else if (data.code === 423) {
                     showError(data.message + ' (账户已锁定)');
-                    btn.innerHTML = '登录';
+                    btn.innerHTML = '<span class="btn-text">登 录</span><span class="btn-arrow">→</span>';
                     btn.disabled = false;
                 } else {
                     showError(data.message);
-                    btn.innerHTML = '登录';
+                    btn.innerHTML = '<span class="btn-text">登 录</span><span class="btn-arrow">→</span>';
                     btn.disabled = false;
                 }
-            } catch (err) {
+            } catch(err) {
                 showError('网络错误，请检查服务器连接');
-                btn.innerHTML = '登录';
+                btn.innerHTML = '<span class="btn-text">登 录</span><span class="btn-arrow">→</span>';
                 btn.disabled = false;
             }
         });
-
-        // 修改密码表单提交
+        
+        // 修改密码表单
         document.getElementById('passwordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const errEl = document.getElementById('passwordModalError');
-
+            var newPassword = document.getElementById('newPassword').value;
+            var confirmPassword = document.getElementById('confirmPassword').value;
+            var errEl = document.getElementById('passwordModalError');
+            
             if (newPassword !== confirmPassword) {
-                errEl.textContent = '两次输入的密码不一致'; errEl.style.display = 'block'; return;
+                errEl.textContent = '两次输入的密码不一致';
+                errEl.style.display = 'block';
+                return;
             }
             if (newPassword.length < 6) {
-                errEl.textContent = '密码长度不能少于6位'; errEl.style.display = 'block'; return;
+                errEl.textContent = '密码长度不能少于6位';
+                errEl.style.display = 'block';
+                return;
             }
-
-            const token = sessionStorage.getItem('token');
+            
+            var token = sessionStorage.getItem('token');
             try {
-                const res = await fetch(`${API_BASE}/auth/password`, {
+                var res = await fetch(API_BASE + '/auth/password', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ oldPassword: '', newPassword })
+                    body: JSON.stringify({ oldPassword: '', newPassword: newPassword })
                 });
-                const data = await res.json();
-
+                var data = await res.json();
+                
                 if (data.code === 200) {
                     document.getElementById('passwordModal').classList.remove('show');
-                    // 获取最新用户信息并跳转
-                    const userRes = await fetch(`${API_BASE}/user/info`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                    var userRes = await fetch(API_BASE + '/user/info', {
+                        headers: { 'Authorization': 'Bearer ' + token }
                     });
-                    const userData = await userRes.json();
+                    var userData = await userRes.json();
                     if (userData.code === 200) {
                         sessionStorage.setItem('user', JSON.stringify(userData.data));
                         redirectByRole(userData.data.role);
                     }
                 } else {
-                    errEl.textContent = data.message || '修改失败'; errEl.style.display = 'block';
+                    errEl.textContent = data.message || '修改失败';
+                    errEl.style.display = 'block';
                 }
-            } catch (err) {
-                errEl.textContent = '网络错误'; errEl.style.display = 'block';
+            } catch(err) {
+                errEl.textContent = '网络错误';
+                errEl.style.display = 'block';
             }
         });
-
-        // 根据角色跳转
+        
         function redirectByRole(role) {
             if (role === 'ADMIN') {
                 window.location.href = 'admin.html';
@@ -402,8 +943,7 @@
                 window.location.href = 'index.html';
             }
         }
-
-        // 登出
+        
         function logout() {
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('user');
