@@ -108,7 +108,39 @@
         .character {
             position: absolute;
             bottom: 0;
-            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: center bottom;
+        }
+        
+        /* 偷看状态 - 所有角色伸脖子往前探 */
+        .character.peeking {
+            transform: translateY(-25px) scaleY(1.08);
+        }
+        .character.peeking .eyes {
+            transform: translateY(-3px);
+        }
+        .character.peeking .eye {
+            height: 28px !important;
+        }
+        .character.peeking .pupil {
+            width: 12px !important;
+            height: 12px !important;
+        }
+        
+        /* 捂眼睛状态 - 所有角色转身/捂脸不看密码 */
+        .character.covering-eyes {
+            transform: rotateY(180deg);
+        }
+        .character.covering-eyes .eyes {
+            opacity: 0;
+        }
+        .character.covering-eyes::after {
+            content: '🙈';
+            position: absolute;
+            font-size: 32px;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%) rotateY(180deg);
         }
         
         /* 紫色角色 - 后面 */
@@ -120,8 +152,12 @@
             border-radius: 12px 12px 0 0;
             z-index: 1;
         }
-        .char-purple.typing {
-            transform: scaleY(1.12) translateY(-20px);
+        .char-purple.peeking {
+            transform: translateY(-30px) scaleY(1.1);
+        }
+        .char-purple.covering-eyes::after {
+            font-size: 36px;
+            top: 40px;
         }
         
         /* 黑色角色 - 中间 */
@@ -133,6 +169,13 @@
             border-radius: 8px 8px 0 0;
             z-index: 2;
         }
+        .char-dark.peeking {
+            transform: translateY(-20px) scaleY(1.06);
+        }
+        .char-dark.covering-eyes::after {
+            font-size: 28px;
+            top: 30px;
+        }
         
         /* 橙色角色 - 左前 */
         .char-orange {
@@ -143,6 +186,16 @@
             border-radius: 110px 110px 0 0;
             z-index: 3;
         }
+        .char-orange.peeking {
+            transform: translateY(-18px) scaleY(1.1) translateX(10px);
+        }
+        .char-orange.covering-eyes {
+            transform: rotateY(180deg) translateX(-10px);
+        }
+        .char-orange.covering-eyes::after {
+            font-size: 40px;
+            top: 60px;
+        }
         
         /* 黄色角色 - 右前 */
         .char-yellow {
@@ -152,6 +205,19 @@
             background: linear-gradient(180deg, #F0E68C 0%, #D4C940 100%);
             border-radius: 65px 65px 0 0;
             z-index: 4;
+        }
+        .char-yellow.peeking {
+            transform: translateY(-22px) scaleY(1.12) translateX(-8px);
+        }
+        .char-yellow.covering-eyes {
+            transform: rotateY(180deg) translateX(8px);
+        }
+        .char-yellow.covering-eyes::after {
+            font-size: 32px;
+            top: 35px;
+        }
+        .char-yellow.covering-eyes .mouth {
+            opacity: 0;
         }
         
         /* 眼睛容器 */
@@ -252,20 +318,6 @@
         }
         .eye.blink .pupil {
             opacity: 0;
-        }
-        
-        /* 害羞躲避效果 - 紫色角色 */
-        .char-purple.hiding {
-            transform: translateX(50px) skewX(-8deg);
-        }
-        .char-purple.hiding .eyes {
-            left: 60px !important;
-        }
-        .char-purple.hiding .eye:first-child .pupil {
-            transform: translate(-4px, -4px);
-        }
-        .char-purple.hiding .eye:last-child .pupil {
-            transform: translate(-4px, -4px);
         }
         
         /* 右侧品牌文字 */
@@ -753,51 +805,81 @@
         }
         startBlinking();
         
-        // 输入状态监听
+        // 输入状态监听 - 所有角色一起偷看
         document.getElementById('username').addEventListener('focus', function() {
             isTyping = true;
-            document.getElementById('charPurple').classList.add('typing');
+            addClassToAllChars('peeking');
         });
         document.getElementById('username').addEventListener('blur', function() {
             isTyping = false;
-            document.getElementById('charPurple').classList.remove('typing');
+            if (!document.getElementById('password').matches(':focus')) {
+                removeClassFromAllChars('peeking');
+            }
         });
         
         document.getElementById('password').addEventListener('focus', function() {
             isTyping = true;
-            document.getElementById('charPurple').classList.add('typing');
-            if (passwordLength > 0 && !passwordVisible) {
-                document.getElementById('charPurple').classList.add('hiding');
+            if (passwordVisible) {
+                addClassToAllChars('covering-eyes');
+            } else {
+                addClassToAllChars('peeking');
             }
         });
         document.getElementById('password').addEventListener('blur', function() {
             isTyping = false;
-            document.getElementById('charPurple').classList.remove('typing');
-            document.getElementById('charPurple').classList.remove('hiding');
+            if (!document.getElementById('username').matches(':focus')) {
+                removeClassFromAllChars('peeking');
+            }
+            removeClassFromAllChars('covering-eyes');
         });
         document.getElementById('password').addEventListener('input', function() {
             passwordLength = this.value.length;
-            if (passwordLength > 0 && !passwordVisible) {
-                document.getElementById('charPurple').classList.add('hiding');
-            } else {
-                document.getElementById('charPurple').classList.remove('hiding');
+            if (passwordLength > 0 && passwordVisible) {
+                addClassToAllChars('covering-eyes');
+            } else if (passwordLength > 0 && !passwordVisible) {
+                // 输入密码时偷看更带劲
+                allCharacters.forEach(function(id, i) {
+                    var el = document.getElementById(id);
+                    if (el) {
+                        el.style.transitionDelay = (i * 0.05) + 's';
+                    }
+                });
             }
         });
         
-        // 密码可见性切换
+        // 密码可见性切换 - 显示密码时所有角色捂眼睛转身
         document.getElementById('passwordToggle').addEventListener('click', function() {
             const pwd = document.getElementById('password');
             if (pwd.type === 'password') {
                 pwd.type = 'text';
                 passwordVisible = true;
                 this.textContent = '🙈';
-                document.getElementById('charPurple').classList.remove('hiding');
+                removeClassFromAllChars('peeking');
+                // 依次转身，更有趣
+                allCharacters.forEach(function(id, i) {
+                    setTimeout(function() {
+                        var el = document.getElementById(id);
+                        if (el) el.classList.add('covering-eyes');
+                    }, i * 80);
+                });
             } else {
                 pwd.type = 'password';
                 passwordVisible = false;
                 this.textContent = '👁️';
-                if (passwordLength > 0) {
-                    document.getElementById('charPurple').classList.add('hiding');
+                // 依次转回来
+                allCharacters.forEach(function(id, i) {
+                    setTimeout(function() {
+                        var el = document.getElementById(id);
+                        if (el) el.classList.remove('covering-eyes');
+                    }, i * 60);
+                });
+                if (isTyping || passwordLength > 0) {
+                    allCharacters.forEach(function(id, i) {
+                        setTimeout(function() {
+                            var el = document.getElementById(id);
+                            if (el) el.classList.add('peeking');
+                        }, i * 60 + 200);
+                    });
                 }
             }
         });
