@@ -96,136 +96,30 @@
             letter-spacing: -0.5px;
         }
         
+
         /* 互动角色区域 */
         .characters-container {
             position: relative;
             z-index: 2;
-            width: 500px;
-            height: 380px;
+            width: 550px;
+            height: 400px;
         }
         
         /* 角色基类 */
         .character {
             position: absolute;
             bottom: 0;
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform-origin: center bottom;
+            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom center;
         }
         
-        /* 偷看状态 - 所有角色伸脖子往前探 */
-        .character.peeking {
-            transform: translateY(-25px) scaleY(1.08);
-        }
-        .character.peeking .eyes {
-            transform: translateY(-3px);
-        }
-        .character.peeking .eye {
-            height: 28px !important;
-        }
-        .character.peeking .pupil {
-            width: 12px !important;
-            height: 12px !important;
-        }
-        
-        /* 捂眼睛状态 - 所有角色转身/捂脸不看密码 */
-        .character.covering-eyes {
-            transform: rotateY(180deg);
-        }
-        .character.covering-eyes .eyes {
-            opacity: 0;
-        }
-        .character.covering-eyes::after {
-            content: '🙈';
-            position: absolute;
-            font-size: 32px;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%) rotateY(180deg);
-        }
-        
-        /* 紫色角色 - 后面 */
-        .char-purple {
-            left: 60px;
-            width: 160px;
-            height: 380px;
-            background: linear-gradient(180deg, #7C4FF5 0%, #5B2FD6 100%);
-            border-radius: 12px 12px 0 0;
-            z-index: 1;
-        }
-        .char-purple.peeking {
-            transform: translateY(-30px) scaleY(1.1);
-        }
-        .char-purple.covering-eyes::after {
-            font-size: 36px;
-            top: 40px;
-        }
-        
-        /* 黑色角色 - 中间 */
-        .char-dark {
-            left: 210px;
-            width: 110px;
-            height: 300px;
-            background: linear-gradient(180deg, #3D3D3D 0%, #1D1D1D 100%);
-            border-radius: 8px 8px 0 0;
-            z-index: 2;
-        }
-        .char-dark.peeking {
-            transform: translateY(-20px) scaleY(1.06);
-        }
-        .char-dark.covering-eyes::after {
-            font-size: 28px;
-            top: 30px;
-        }
-        
-        /* 橙色角色 - 左前 */
-        .char-orange {
-            left: 0;
-            width: 220px;
-            height: 200px;
-            background: linear-gradient(180deg, #FFA07A 0%, #FF8C5A 100%);
-            border-radius: 110px 110px 0 0;
-            z-index: 3;
-        }
-        .char-orange.peeking {
-            transform: translateY(-18px) scaleY(1.1) translateX(10px);
-        }
-        .char-orange.covering-eyes {
-            transform: rotateY(180deg) translateX(-10px);
-        }
-        .char-orange.covering-eyes::after {
-            font-size: 40px;
-            top: 60px;
-        }
-        
-        /* 黄色角色 - 右前 */
-        .char-yellow {
-            left: 290px;
-            width: 130px;
-            height: 220px;
-            background: linear-gradient(180deg, #F0E68C 0%, #D4C940 100%);
-            border-radius: 65px 65px 0 0;
-            z-index: 4;
-        }
-        .char-yellow.peeking {
-            transform: translateY(-22px) scaleY(1.12) translateX(-8px);
-        }
-        .char-yellow.covering-eyes {
-            transform: rotateY(180deg) translateX(8px);
-        }
-        .char-yellow.covering-eyes::after {
-            font-size: 32px;
-            top: 35px;
-        }
-        .char-yellow.covering-eyes .mouth {
-            opacity: 0;
-        }
-        
-        /* 眼睛容器 */
+        /* 眼睛容器 - 跟随鼠标整体移动 */
         .eyes {
             position: absolute;
             display: flex;
-            gap: 12px;
-            transition: all 0.3s ease;
+            transition: left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                        top 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        gap 0.3s ease;
         }
         
         /* 眼白 */
@@ -236,80 +130,26 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            transition: height 0.1s;
+            transition: height 0.1s ease, background 0.3s ease;
+            overflow: hidden;
         }
         
         /* 瞳孔 */
         .pupil {
             background: #2D2D2D;
             border-radius: 50%;
-            position: absolute;
-            transition: transform 0.1s ease-out;
+            transition: transform 0.1s ease-out, opacity 0.1s ease;
         }
         
-        /* 紫色角色眼睛 */
-        .char-purple .eyes {
-            left: 35px;
-            top: 45px;
-        }
-        .char-purple .eye {
-            width: 22px;
-            height: 22px;
-        }
-        .char-purple .pupil {
-            width: 10px;
-            height: 10px;
-        }
-        
-        /* 黑色角色眼睛 */
-        .char-dark .eyes {
-            left: 22px;
-            top: 35px;
-        }
-        .char-dark .eye {
-            width: 20px;
-            height: 20px;
-        }
-        .char-dark .pupil {
-            width: 9px;
-            height: 9px;
-        }
-        
-        /* 橙色角色眼睛 */
-        .char-orange .eyes {
-            left: 60px;
-            top: 75px;
-        }
-        .char-orange .eye {
-            width: 24px;
-            height: 24px;
-        }
-        .char-orange .pupil {
-            width: 12px;
-            height: 12px;
-        }
-        
-        /* 黄色角色眼睛 + 嘴巴 */
-        .char-yellow .eyes {
-            left: 30px;
-            top: 40px;
-        }
+        /* 无眼白角色（橙/黄） */
+        .char-orange .eye,
         .char-yellow .eye {
-            width: 22px;
-            height: 22px;
+            background: transparent;
         }
+        .char-orange .pupil,
         .char-yellow .pupil {
-            width: 11px;
-            height: 11px;
-        }
-        .char-yellow .mouth {
-            position: absolute;
-            width: 40px;
-            height: 5px;
-            background: #2D2D2D;
-            border-radius: 3px;
-            left: 26px;
-            top: 85px;
+            width: 100% !important;
+            height: 100% !important;
         }
         
         /* 眨眼动画 */
@@ -320,6 +160,167 @@
             opacity: 0;
         }
         
+        /* 紫色角色 - 后面 */
+        .char-purple {
+            left: 70px;
+            width: 180px;
+            height: 400px;
+            background: linear-gradient(180deg, #7C4FF5 0%, #5B2FD6 100%);
+            border-radius: 10px 10px 0 0;
+            z-index: 1;
+        }
+        .char-purple .eyes {
+            left: 45px;
+            top: 40px;
+            gap: 32px;
+        }
+        .char-purple .eye {
+            width: 18px;
+            height: 18px;
+        }
+        .char-purple .pupil {
+            width: 7px;
+            height: 7px;
+        }
+        /* 紫色角色 - 偷看密码时伸脖子 */
+        .char-purple.hiding-password {
+            height: 440px;
+            transform: skewX(-12deg) translateX(40px);
+        }
+        .char-purple.hiding-password .eyes {
+            left: 20px;
+            top: 35px;
+        }
+        /* 紫色角色 - 显示密码时害羞低头 */
+        .char-purple.password-visible {
+            transform: translateY(5px);
+        }
+        .char-purple.password-visible .eyes {
+            left: 20px;
+            top: 35px;
+        }
+        /* 紫色角色 - 偷偷瞥一眼 */
+        .char-purple.sneak-peek .eyes {
+            left: 55px !important;
+            top: 65px !important;
+        }
+        /* 紫色角色 - 对视时 */
+        .char-purple.looking-at-other {
+            transform: skewX(-10deg) translateX(30px);
+        }
+        .char-purple.looking-at-other .eyes {
+            left: 55px;
+            top: 65px;
+        }
+        
+        /* 黑色角色 - 中间 */
+        .char-dark {
+            left: 240px;
+            width: 120px;
+            height: 310px;
+            background: linear-gradient(180deg, #3D3D3D 0%, #1D1D1D 100%);
+            border-radius: 8px 8px 0 0;
+            z-index: 2;
+        }
+        .char-dark .eyes {
+            left: 26px;
+            top: 32px;
+            gap: 24px;
+        }
+        .char-dark .eye {
+            width: 16px;
+            height: 16px;
+        }
+        .char-dark .pupil {
+            width: 6px;
+            height: 6px;
+        }
+        /* 黑色角色 - 偷看密码时 */
+        .char-dark.hiding-password .eyes {
+            left: 10px;
+            top: 28px;
+        }
+        .char-dark.password-visible .eyes {
+            left: 10px;
+            top: 28px;
+        }
+        /* 黑色角色 - 对视时 */
+        .char-dark.looking-at-other {
+            transform: skewX(10deg) translateX(20px);
+        }
+        .char-dark.looking-at-other .eyes {
+            left: 32px;
+            top: 12px;
+        }
+        
+        /* 橙色角色 - 左前 */
+        .char-orange {
+            left: 0;
+            width: 240px;
+            height: 200px;
+            background: linear-gradient(180deg, #FF9B6B 0%, #FF8C5A 100%);
+            border-radius: 120px 120px 0 0;
+            z-index: 3;
+        }
+        .char-orange .eyes {
+            left: 82px;
+            top: 90px;
+            gap: 32px;
+        }
+        .char-orange .eye {
+            width: 12px;
+            height: 12px;
+        }
+        .char-orange .pupil {
+            width: 12px;
+            height: 12px;
+        }
+        .char-orange.password-visible .eyes {
+            left: 50px;
+            top: 85px;
+        }
+        
+        /* 黄色角色 - 右前 */
+        .char-yellow {
+            left: 310px;
+            width: 140px;
+            height: 230px;
+            background: linear-gradient(180deg, #E8D754 0%, #D4C940 100%);
+            border-radius: 70px 70px 0 0;
+            z-index: 4;
+        }
+        .char-yellow .eyes {
+            left: 52px;
+            top: 40px;
+            gap: 24px;
+        }
+        .char-yellow .eye {
+            width: 12px;
+            height: 12px;
+        }
+        .char-yellow .pupil {
+            width: 12px;
+            height: 12px;
+        }
+        .char-yellow .mouth {
+            position: absolute;
+            width: 40px;
+            height: 4px;
+            background: #2D2D2D;
+            border-radius: 3px;
+            left: 40px;
+            top: 88px;
+            transition: left 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        top 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .char-yellow.password-visible .eyes {
+            left: 20px;
+            top: 35px;
+        }
+        .char-yellow.password-visible .mouth {
+            left: 10px;
+            top: 88px;
+        }
         /* 右侧品牌文字 */
         .brand-text {
             position: relative;
@@ -755,23 +756,106 @@
     <script>
         const API_BASE = '/api';
         
+
         // ========== 互动角色系统 ==========
         const mouseState = { x: 0, y: 0 };
         let isTyping = false;
         let passwordVisible = false;
         let passwordLength = 0;
+        let isLookingAtEachOther = false;
+        let isSneakPeeking = false;
+        let sneakPeekTimer = null;
+        
+        // 角色引用
+        const charPurple = document.getElementById('charPurple');
+        const charDark = document.getElementById('charDark');
+        const charOrange = document.getElementById('charOrange');
+        const charYellow = document.getElementById('charYellow');
+        
+        const purpleEyes = charPurple.querySelector('.eyes');
+        const darkEyes = charDark.querySelector('.eyes');
+        const orangeEyes = charOrange.querySelector('.eyes');
+        const yellowEyes = charYellow.querySelector('.eyes');
+        const yellowMouth = charYellow.querySelector('.mouth');
+        
+        const allEyeElements = document.querySelectorAll('.eye');
+        const allPupilElements = document.querySelectorAll('.pupil');
+        
+        // 眼睛基础位置（用于计算偏移）
+        const eyeBasePositions = {
+            purple: { left: 45, top: 40 },
+            dark: { left: 26, top: 32 },
+            orange: { left: 82, top: 90 },
+            yellow: { left: 52, top: 40 }
+        };
         
         // 鼠标跟随
         document.addEventListener('mousemove', function(e) {
             mouseState.x = e.clientX;
             mouseState.y = e.clientY;
-            updatePupils();
+            updateCharacterPositions();
         });
         
+        // 更新所有角色位置（身体倾斜 + 眼睛移动）
+        function updateCharacterPositions() {
+            if (passwordVisible && !isSneakPeeking) return; // 显示密码时不跟随鼠标
+            if (isLookingAtEachOther) return; // 对视时不跟随
+            
+            // 紫色角色
+            updateSingleChar(charPurple, purpleEyes, 45, 40, 15, 10, -6);
+            
+            // 黑色角色
+            updateSingleChar(charDark, darkEyes, 26, 32, 12, 8, -6);
+            
+            // 橙色角色
+            updateSingleChar(charOrange, orangeEyes, 82, 90, 10, 6, -4);
+            
+            // 黄色角色
+            updateSingleChar(charYellow, yellowEyes, 52, 40, 10, 6, -4);
+            if (yellowMouth) {
+                const mouthX = 40 + getMouseDelta(charYellow, 10, 0).x;
+                yellowMouth.style.left = mouthX + 'px';
+            }
+            
+            // 更新瞳孔
+            updateAllPupils();
+        }
+        
+        function getMouseDelta(element, maxFaceX, maxFaceY) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 3;
+            
+            const deltaX = mouseState.x - centerX;
+            const deltaY = mouseState.y - centerY;
+            
+            const faceX = Math.max(-maxFaceX, Math.min(maxFaceX, deltaX / 20));
+            const faceY = Math.max(-maxFaceY, Math.min(maxFaceY, deltaY / 30));
+            
+            return { x: faceX, y: faceY, deltaX: deltaX };
+        }
+        
+        function updateSingleChar(charEl, eyesEl, baseLeft, baseTop, maxFaceX, maxFaceY, maxSkew) {
+            if (!charEl || !eyesEl) return;
+            
+            // 偷看密码或显示密码状态下不跟随鼠标倾斜身体
+            if (charEl.classList.contains('hiding-password') || 
+                charEl.classList.contains('password-visible') ||
+                charEl.classList.contains('looking-at-other')) {
+                return;
+            }
+            
+            const delta = getMouseDelta(charEl, maxFaceX, maxFaceY);
+            const bodySkew = Math.max(maxSkew, Math.min(-maxSkew, -delta.deltaX / 120));
+            
+            charEl.style.transform = 'skewX(' + bodySkew + 'deg)';
+            eyesEl.style.left = (baseLeft + delta.x) + 'px';
+            eyesEl.style.top = (baseTop + delta.y) + 'px';
+        }
+        
         // 更新所有瞳孔位置
-        function updatePupils() {
-            const pupils = document.querySelectorAll('.pupil');
-            pupils.forEach(function(pupil) {
+        function updateAllPupils() {
+            allPupilElements.forEach(function(pupil) {
                 const eye = pupil.parentElement;
                 const rect = eye.getBoundingClientRect();
                 const eyeCenterX = rect.left + rect.width / 2;
@@ -791,99 +875,207 @@
             });
         }
         
-        // 随机眨眼
+        // 独立眨眼动画
         function startBlinking() {
-            setInterval(function() {
-                const eyes = document.querySelectorAll('.eye');
-                eyes.forEach(function(eye) {
-                    eye.classList.add('blink');
-                    setTimeout(function() {
-                        eye.classList.remove('blink');
-                    }, 120);
-                });
-            }, 3000 + Math.random() * 2000);
+            // 紫色角色眨眼
+            function purpleBlink() {
+                const eyes = charPurple.querySelectorAll('.eye');
+                eyes.forEach(function(e) { e.classList.add('blink'); });
+                setTimeout(function() {
+                    eyes.forEach(function(e) { e.classList.remove('blink'); });
+                }, 150);
+                setTimeout(purpleBlink, Math.random() * 4000 + 3000);
+            }
+            
+            // 黑色角色眨眼
+            function darkBlink() {
+                const eyes = charDark.querySelectorAll('.eye');
+                eyes.forEach(function(e) { e.classList.add('blink'); });
+                setTimeout(function() {
+                    eyes.forEach(function(e) { e.classList.remove('blink'); });
+                }, 150);
+                setTimeout(darkBlink, Math.random() * 4000 + 3500);
+            }
+            
+            // 橙色角色眨眼
+            function orangeBlink() {
+                const eyes = charOrange.querySelectorAll('.eye');
+                eyes.forEach(function(e) { e.classList.add('blink'); });
+                setTimeout(function() {
+                    eyes.forEach(function(e) { e.classList.remove('blink'); });
+                }, 120);
+                setTimeout(orangeBlink, Math.random() * 3000 + 2500);
+            }
+            
+            // 黄色角色眨眼
+            function yellowBlink() {
+                const eyes = charYellow.querySelectorAll('.eye');
+                eyes.forEach(function(e) { e.classList.add('blink'); });
+                setTimeout(function() {
+                    eyes.forEach(function(e) { e.classList.remove('blink'); });
+                }, 120);
+                setTimeout(yellowBlink, Math.random() * 3500 + 3000);
+            }
+            
+            purpleBlink();
+            darkBlink();
+            orangeBlink();
+            yellowBlink();
         }
         startBlinking();
         
-        // 输入状态监听 - 所有角色一起偷看
+        // 对视效果
+        function triggerLookAtEachOther() {
+            isLookingAtEachOther = true;
+            
+            charPurple.classList.add('looking-at-other');
+            charDark.classList.add('looking-at-other');
+            
+            // 对视时眼睛位置
+            purpleEyes.style.left = '55px';
+            purpleEyes.style.top = '65px';
+            darkEyes.style.left = '32px';
+            darkEyes.style.top = '12px';
+            
+            setTimeout(function() {
+                isLookingAtEachOther = false;
+                charPurple.classList.remove('looking-at-other');
+                charDark.classList.remove('looking-at-other');
+                updateCharacterPositions();
+            }, 800);
+        }
+        
+        // 偷偷瞥密码效果（紫色角色）
+        function startSneakPeeking() {
+            if (sneakPeekTimer) clearInterval(sneakPeekTimer);
+            
+            function sneakPeek() {
+                if (!passwordVisible || passwordLength === 0) return;
+                
+                isSneakPeeking = true;
+                charPurple.classList.add('sneak-peek');
+                
+                // 瞥一眼后马上缩回去
+                setTimeout(function() {
+                    isSneakPeeking = false;
+                    charPurple.classList.remove('sneak-peek');
+                }, 800);
+            }
+            
+            // 第一次马上来一下
+            setTimeout(sneakPeek, 500);
+            
+            // 之后周期性偷看
+            sneakPeekTimer = setInterval(function() {
+                if (passwordVisible && passwordLength > 0) {
+                    sneakPeek();
+                }
+            }, Math.random() * 3000 + 2000);
+        }
+        
+        function stopSneakPeeking() {
+            if (sneakPeekTimer) {
+                clearInterval(sneakPeekTimer);
+                sneakPeekTimer = null;
+            }
+            isSneakPeeking = false;
+            charPurple.classList.remove('sneak-peek');
+        }
+        
+        // 输入状态监听
         document.getElementById('username').addEventListener('focus', function() {
             isTyping = true;
-            addClassToAllChars('peeking');
+            triggerLookAtEachOther();
+            // 所有角色进入偷看状态（伸脖子）
+            [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                if (c) c.classList.add('hiding-password');
+            });
         });
         document.getElementById('username').addEventListener('blur', function() {
             isTyping = false;
             if (!document.getElementById('password').matches(':focus')) {
-                removeClassFromAllChars('peeking');
+                [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                    if (c) c.classList.remove('hiding-password');
+                });
+                updateCharacterPositions();
             }
         });
         
         document.getElementById('password').addEventListener('focus', function() {
             isTyping = true;
             if (passwordVisible) {
-                addClassToAllChars('covering-eyes');
+                [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                    if (c) c.classList.add('password-visible');
+                });
+                startSneakPeeking();
             } else {
-                addClassToAllChars('peeking');
+                [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                    if (c) c.classList.add('hiding-password');
+                });
+                triggerLookAtEachOther();
             }
         });
         document.getElementById('password').addEventListener('blur', function() {
             isTyping = false;
             if (!document.getElementById('username').matches(':focus')) {
-                removeClassFromAllChars('peeking');
+                [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                    if (c) {
+                        c.classList.remove('hiding-password');
+                        c.classList.remove('password-visible');
+                    }
+                });
+                stopSneakPeeking();
+                updateCharacterPositions();
             }
-            removeClassFromAllChars('covering-eyes');
         });
         document.getElementById('password').addEventListener('input', function() {
             passwordLength = this.value.length;
-            if (passwordLength > 0 && passwordVisible) {
-                addClassToAllChars('covering-eyes');
-            } else if (passwordLength > 0 && !passwordVisible) {
-                // 输入密码时偷看更带劲
-                allCharacters.forEach(function(id, i) {
-                    var el = document.getElementById(id);
-                    if (el) {
-                        el.style.transitionDelay = (i * 0.05) + 's';
-                    }
-                });
-            }
         });
         
-        // 密码可见性切换 - 显示密码时所有角色捂眼睛转身
+        // 密码可见性切换
         document.getElementById('passwordToggle').addEventListener('click', function() {
             const pwd = document.getElementById('password');
             if (pwd.type === 'password') {
                 pwd.type = 'text';
                 passwordVisible = true;
                 this.textContent = '🙈';
-                removeClassFromAllChars('peeking');
-                // 依次转身，更有趣
-                allCharacters.forEach(function(id, i) {
-                    setTimeout(function() {
-                        var el = document.getElementById(id);
-                        if (el) el.classList.add('covering-eyes');
-                    }, i * 80);
+                
+                // 角色转过去不看
+                [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                    if (c) {
+                        c.classList.remove('hiding-password');
+                        c.classList.add('password-visible');
+                    }
                 });
+                
+                // 紫色角色开始偷偷瞥
+                if (isTyping || passwordLength > 0) {
+                    startSneakPeeking();
+                }
+                
             } else {
                 pwd.type = 'password';
                 passwordVisible = false;
                 this.textContent = '👁️';
-                // 依次转回来
-                allCharacters.forEach(function(id, i) {
-                    setTimeout(function() {
-                        var el = document.getElementById(id);
-                        if (el) el.classList.remove('covering-eyes');
-                    }, i * 60);
+                
+                stopSneakPeeking();
+                
+                // 转回来继续偷看
+                [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                    if (c) c.classList.remove('password-visible');
                 });
                 if (isTyping || passwordLength > 0) {
-                    allCharacters.forEach(function(id, i) {
-                        setTimeout(function() {
-                            var el = document.getElementById(id);
-                            if (el) el.classList.add('peeking');
-                        }, i * 60 + 200);
+                    [charPurple, charDark, charOrange, charYellow].forEach(function(c) {
+                        if (c) c.classList.add('hiding-password');
                     });
                 }
+                
+                updateCharacterPositions();
             }
         });
         
+        // 初始化一次位置
+        setTimeout(updateCharacterPositions, 100);
         // ========== 页面初始化 ==========
         document.addEventListener('DOMContentLoaded', function() {
             const token = sessionStorage.getItem('token');
