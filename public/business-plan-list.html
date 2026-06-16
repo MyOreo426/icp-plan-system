@@ -10,7 +10,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f5f7fa;
+            background: #f8fafc;
             margin: 0;
             padding: 0;
             height: 100%;
@@ -18,7 +18,7 @@
         }
         /* 导航栏 */
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             padding: 0 30px;
             height: 60px;
             display: flex;
@@ -87,7 +87,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #667eea;
+            border: 2px solid #6366f1;
         }
         .notification-badge.hidden { display: none; }
 
@@ -154,7 +154,7 @@
             margin-bottom: 12px;
             flex-shrink: 0;
         }
-        .page-title { font-size: 20px; color: #2c3e50; font-weight: 600; }
+        .page-title { font-size: 20px; color: #1e293b; font-weight: 600; }
         .page-actions { display: flex; gap: 10px; }
 
         /* 按钮样式 */
@@ -173,16 +173,18 @@
         }
         .btn svg { width: 16px; height: 16px; fill: currentColor; }
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
         }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); }
+        .btn-primary:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2); }
         .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
         .btn-danger:hover { background: #fee2e2; }
         .btn-success { background: #d1fae5; color: #059669; border: 1px solid #6ee7b7; }
         .btn-success:hover { background: #a7f3d0; }
-        .btn-outline { background: white; color: #7f8c8d; border: 1px solid #e0e6ed; }
-        .btn-outline:hover { border-color: #667eea; color: #667eea; }
+        .btn-outline { background: white; color: #64748b; border: 1px solid #e2e8f0; }
+        .btn-outline:hover { border-color: #6366f1; color: #6366f1; background: #f8fafc; }
+        .btn-outline:active { background: #f1f5f9; }
 
         /* 筛选区 */
         .filter-bar {
@@ -194,30 +196,32 @@
             gap: 12px;
             flex-wrap: wrap;
             align-items: flex-end;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
             flex-shrink: 0;
         }
         .filter-group { display: flex; flex-direction: column; gap: 4px; }
-        .filter-label { font-size: 12px; color: #7f8c8d; }
+        .filter-label { font-size: 12px; color: #64748b; }
         .filter-input {
             padding: 6px 10px;
-            border: 1px solid #e0e6ed;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
             font-size: 13px;
             outline: none;
             width: 150px;
         }
-        .filter-input:focus { border-color: #667eea; }
+        .filter-input:hover:not(:focus) { border-color: #cbd5e1; }
+        .filter-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
         .filter-select {
             padding: 6px 10px;
-            border: 1px solid #e0e6ed;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
             font-size: 13px;
             outline: none;
             background: white;
             width: 130px;
         }
-        .filter-select:focus { border-color: #667eea; }
+        .filter-select:hover:not(:focus) { border-color: #cbd5e1; }
+        .filter-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
         .filter-actions { display: flex; gap: 8px; margin-left: auto; }
 
         /* 数据表格 */
@@ -249,8 +253,8 @@
             text-align: left;
             font-size: 13px;
             font-weight: 600;
-            color: #34495e;
-            border-bottom: 1px solid #e0e6ed;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
             white-space: nowrap;
             position: sticky;
             top: 0;
@@ -259,11 +263,12 @@
         td {
             padding: 10px 12px;
             font-size: 13px;
-            color: #34495e;
-            border-bottom: 1px solid #f0f3ff;
+            color: #475569;
+            border-bottom: 1px solid #f1f5f9;
             white-space: nowrap;
         }
-        tr:hover td { background: #fafbff; }
+        tr td { transition: background 0.15s ease; }
+        tr:hover td { background: #f8fafc; }
         tr:last-child td { border-bottom: none; }
 
         .col-seq { width: 60px; text-align: center; }
@@ -310,6 +315,7 @@
         }
         .action-btn.edit { background: #e0e7ff; color: #4f46e5; }
         .action-btn.edit:hover { background: #c7d2fe; }
+        .action-btn.delete:hover { background: #fee2e2; }
         .action-btn.delete { background: #fef2f2; color: #dc2626; }
         .action-btn.delete:hover { background: #fee2e2; }
 
@@ -321,31 +327,32 @@
             gap: 8px;
             padding: 12px 0;
             flex-shrink: 0;
-            border-top: 1px solid #f0f3ff;
+            border-top: 1px solid #f1f5f9;
         }
         .page-btn {
             padding: 6px 12px;
-            border: 1px solid #e0e6ed;
+            border: 1px solid #e2e8f0;
             background: white;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
-            color: #374151;
+            color: #475569;
         }
-        .page-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; }
+        .page-btn { transition: all 0.15s ease; }
+        .page-btn:hover:not(:disabled) { border-color: #6366f1; color: #6366f1; background: #f8fafc; }
         .page-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
             border-color: transparent;
         }
         .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .page-info { font-size: 13px; color: #6b7280; }
+        .page-info { font-size: 13px; color: #64748b; }
 
         /* 空状态 */
         .empty-state {
             padding: 60px 20px;
             text-align: center;
-            color: #9ca3af;
+            color: #94a3b8;
         }
         .empty-state svg {
             width: 64px; height: 64px;
@@ -385,6 +392,18 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal {
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         .modal-overlay.hidden { display: none; }
         .modal {
@@ -393,7 +412,7 @@
             padding: 24px;
             min-width: 360px;
             max-width: 90vw;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
         .modal-title {
             font-size: 18px;
@@ -403,7 +422,7 @@
         }
         .modal-content {
             font-size: 14px;
-            color: #6b7280;
+            color: #64748b;
             margin-bottom: 20px;
             line-height: 1.6;
         }
@@ -419,7 +438,7 @@
             width: 20px;
             height: 20px;
             border: 2px solid #e5e7eb;
-            border-top-color: #667eea;
+            border-top-color: #6366f1;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -446,7 +465,7 @@
         }
         .stat-label {
             font-size: 12px;
-            color: #6b7280;
+            color: #64748b;
             margin-top: 4px;
         }
 

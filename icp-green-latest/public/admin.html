@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统管理 - 计划管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo svg { width: 24px; height: 24px; fill: white; }
+        .system-title { color: white; font-size: 18px; font-weight: 600; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .nav-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .nav-btn.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
+        .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+        .user-info { display: flex; align-items: center; gap: 10px; color: white; }
+        .user-avatar {
+            width: 36px; height: 36px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .user-name { font-size: 14px; }
+        .user-role { font-size: 11px; background: rgba(255, 255, 255, 0.2); padding: 2px 8px; border-radius: 10px; }
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* 通知按钮 */
+        .notification-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .notification-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .notification-btn svg { width: 22px; height: 22px; fill: white; }
+        .notification-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 18px; height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #667eea;
+        }
+        .notification-badge.hidden { display: none; }
+
+        .main-container { display: flex; margin-top: 60px; min-height: calc(100vh - 60px); }
+        .content { flex: 1; padding: 30px; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .page-title { font-size: 24px; color: #2c3e50; font-weight: 600; }
+        .page-actions { display: flex; gap: 12px; }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+        }
+        .btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: white; color: #667eea; border: 1px solid #667eea; }
+        .btn-secondary:hover { background: #f0f3ff; }
+        .btn-outline { background: white; color: #7f8c8d; border: 1px solid #e0e6ed; }
+        .btn-outline:hover { border-color: #667eea; color: #667eea; }
+        .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+        .btn-danger:hover { background: #fee2e2; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* 标签页 */
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: white; padding: 5px; border-radius: 10px; }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+        }
+        .tab:hover { color: #667eea; }
+        .tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+
+        /* 筛选 */
+        .filter-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-label { font-size: 12px; color: #7f8c8d; }
+        .filter-input, .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+        .filter-input:focus, .filter-select:focus { border-color: #667eea; }
+
+        /* 表格 */
+        .data-table { background: white; border-radius: 12px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: #f8fafc;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #34495e;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #34495e;
+            border-bottom: 1px solid #f0f3ff;
+        }
+        tr:hover td { background: #fafbff; }
+        tr:last-child td { border-bottom: none; }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .role-ADMIN { background: #fef3c7; color: #d97706; }
+        .role-LEADER { background: #dbeafe; color: #2563eb; }
+        .role-MEMBER { background: #d1fae5; color: #059669; }
+        .role-DIRECTOR { background: #e0e7ff; color: #4f46e5; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .status-1 { background: #d1fae5; color: #059669; }
+        .status-0 { background: #fee2e2; color: #dc2626; }
+
+        .action-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            margin-right: 5px;
+        }
+        .action-btn.reset { background: #fef3c7; color: #d97706; }
+        .action-btn.reset:hover { background: #fde68a; }
+        .action-btn.disable { background: #fef2f2; color: #dc2626; }
+        .action-btn.disable:hover { background: #fee2e2; }
+        .action-btn.enable { background: #d1fae5; color: #059669; }
+        .action-btn.enable:hover { background: #a7f3d0; }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e0e6ed;
+        }
+        .pagination-info { font-size: 13px; color: #7f8c8d; }
+        .pagination-controls { display: flex; gap: 5px; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e0e6ed;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .page-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; }
+        .page-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 500; color: #34495e; margin-bottom: 8px; }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-input:focus, .form-select:focus { border-color: #667eea; }
+        .form-hint { font-size: 12px; color: #95a5a6; margin-top: 5px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; }
+
+        /* 小组卡片 */
+        .group-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .group-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e0e6ed;
+        }
+        .group-card:hover { border-color: #667eea; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .group-name { font-size: 16px; font-weight: 600; color: #2c3e50; margin-bottom: 8px; }
+        .group-info { font-size: 13px; color: #7f8c8d; margin-bottom: 5px; }
+        .group-info strong { color: #34495e; }
+
+        .loading { text-align: center; padding: 60px; color: #95a5a6; }
+        .empty-state { text-align: center; padding: 40px; color: #95a5a6; }
+        /* 通知面板 */
+        .notification-panel {
+            position: absolute;
+            top: 70px;
+            right: 30px;
+            width: 380px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            display: none;
+            z-index: 200;
+            overflow: hidden;
+        }
+        .notification-panel.show { display: block; }
+        .notification-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e6ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-title { font-size: 15px; font-weight: 600; color: #2c3e50; }
+        .notification-mark-read { font-size: 12px; color: #667eea; cursor: pointer; }
+        .notification-mark-read:hover { text-decoration: underline; }
+        .notification-list { max-height: 400px; overflow-y: auto; }
+        .notification-item {
+            padding: 14px 20px;
+            border-bottom: 1px solid #f0f3ff;
+            display: flex;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+        .notification-item:hover { background: #fafbff; }
+        .notification-item:last-child { border-bottom: none; }
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            background: #f0f3ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .notification-icon svg { width: 18px; height: 18px; fill: #667eea; }
+        .notification-content { flex: 1; min-width: 0; }
+        .notification-text { font-size: 13px; color: #34495e; line-height: 1.5; }
+        .notification-time { font-size: 11px; color: #95a5a6; margin-top: 4px; }
+        .notification-empty { padding: 40px 20px; text-align: center; color: #95a5a6; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>
+            <span class="system-title">计划管理系统</span>
+            <div class="nav-divider"></div>
+            <a href="index.html" class="nav-btn" id="dashboardNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                仪表盘
+            </a>
+            <a href="business-plan-list.html" class="nav-btn" id="businessPlanNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                经营计划
+            </a>
+            <a href="delivery-plan-list.html" class="nav-btn" id="deliveryPlanNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-2h-4v-2h4v2zm0-4H8v-2h10v2z"/></svg>
+                交付计划
+            </a>
+            <a href="#" class="nav-btn active" id="navUserBtn" onclick="switchTab('users'); return false;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                用户管理
+            </a>
+            <a href="#" class="nav-btn" id="navGroupBtn" onclick="switchTab('groups'); return false;">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                小组管理
+            </a>
+            <a href="operation-log.html" class="nav-btn">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                操作日志
+            </a>
+        </div>
+        <div class="navbar-right">
+            <button class="notification-btn" onclick="toggleNotification()">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                <span class="notification-badge hidden" id="notifBadge">0</span>
+            </button>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">⚙️</div>
+                <span class="user-name" id="userName">加载中...</span>
+                <span class="user-role" id="navUserRole">管理员</span>
+            </div>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </nav>
+
+    <div class="notification-panel" id="notifPanel">
+        <div class="notification-header">
+            <span class="notification-title">通知消息</span>
+            <span class="notification-mark-read" onclick="markAllRead()">全部已读</span>
+        </div>
+        <div class="notification-list" id="notifList">
+            <div class="notification-empty">暂无通知</div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <main class="content">
+            <div class="page-header">
+                <h1 class="page-title" id="pageTitle">用户管理</h1>
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="createUserBtn" onclick="openUserModal()">
+                        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        创建用户
+                    </button>
+                </div>
+            </div>
+
+            <!-- 用户列表 -->
+            <div id="usersSection">
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <span class="filter-label">角色</span>
+                        <select class="filter-select" id="filterRole">
+                            <option value="">全部角色</option>
+                            <option value="ADMIN">管理员</option>
+                            <option value="LEADER">组长</option>
+                            <option value="MEMBER">组员</option>
+                            <option value="DIRECTOR">主任</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <span class="filter-label">状态</span>
+                        <select class="filter-select" id="filterStatus">
+                            <option value="">全部状态</option>
+                            <option value="1">启用</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="loadUsers(1)">查询</button>
+                    <button class="btn btn-outline btn-sm" onclick="resetUserFilters()">重置</button>
+                </div>
+
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>工号</th>
+                                <th>姓名</th>
+                                <th>角色</th>
+                                <th>小组</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="6" class="loading">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="userPagination">
+                        <span class="pagination-info" id="userPaginationInfo">共 0 条</span>
+                        <div class="pagination-controls" id="userPaginationControls"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 小组列表 -->
+            <div id="groupsSection" style="display:none;">
+                <div style="margin-bottom:16px;">
+                    <button class="btn btn-primary" onclick="openGroupModal()">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;vertical-align:middle;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                        创建小组
+                    </button>
+                </div>
+                <div class="group-grid" id="groupGrid">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 创建/编辑用户模态框 -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-title" id="userModalTitle">创建用户</div>
+            <form id="userForm">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label class="form-label">工号 <span style="color:#e74c3c;">*</span></label>
+                    <input type="text" class="form-input" id="userUsername" placeholder="6位数字" maxlength="6" required>
+                    <div class="form-hint">登录账号，必须为6位数字</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">姓名 <span style="color:#e74c3c;">*</span></label>
+                    <input type="text" class="form-input" id="userRealName" placeholder="真实姓名" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" class="form-input" id="userEmail" placeholder="选填">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">电话</label>
+                    <input type="tel" class="form-input" id="userPhone" placeholder="选填">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色 <span style="color:#e74c3c;">*</span></label>
+                    <select class="form-select" id="userRole" required onchange="onRoleChange()">
+                        <option value="">请选择角色</option>
+                        <option value="ADMIN">管理员</option>
+                        <option value="LEADER">组长</option>
+                        <option value="MEMBER">组员</option>
+                        <option value="DIRECTOR">主任</option>
+                    </select>
+                </div>
+                <div class="form-group" id="groupSelectContainer">
+                    <label class="form-label">所属小组</label>
+                    <select class="form-select" id="userGroupId">
+                        <option value="">-- 请先选择角色 --</option>
+                    </select>
+                    <div class="form-hint" id="groupHint">选择组长时，如不选小组将自动创建新小组</div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeUserModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 创建小组模态框 -->
+    <div class="modal" id="groupModal">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-title">创建小组</div>
+            <form id="groupForm">
+                <div class="form-group">
+                    <label class="form-label">小组名称 <span style="color:#e74c3c;">*</span></label>
+                    <input type="text" class="form-input" id="groupName" placeholder="如：审计一组" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">部门</label>
+                    <input type="text" class="form-input" id="groupDept" placeholder="所属部门">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">组长</label>
+                    <select class="form-input" id="groupLeader">
+                        <option value="">-- 不指定 --</option>
+                    </select>
+                    <div class="form-hint">可选，仅显示未分配小组的组长</div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                    <button type="button" class="btn btn-outline" onclick="closeGroupModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = null;
+        let currentUserPage = 1;
+        let allGroups = [];
+
+        function checkAuth() {
+            const token = sessionStorage.getItem('token');
+            const userStr = sessionStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            const user = JSON.parse(userStr);
+            if (user.role !== 'ADMIN') {
+                alert('只有管理员可以访问此页面');
+                window.location.href = 'index.html';
+                return null;
+            }
+            return user;
+        }
+
+        async function apiRequest(url, options = {}) {
+            const token = sessionStorage.getItem('token');
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            const mergedOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...(options.headers || {})
+                }
+            };
+            const res = await fetch(url, mergedOptions);
+            const data = await res.json();
+            if (data.code === 401) {
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+            return data;
+        }
+
+        async function init() {
+            currentUser = checkAuth();
+            if (!currentUser) return;
+
+            document.getElementById('userName').textContent = currentUser.real_name || currentUser.username;
+            document.getElementById('navUserRole').textContent = getRoleName(currentUser.role);
+            document.getElementById('userAvatar').textContent = getRoleEmoji(currentUser.role);
+
+            // 检查URL参数
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('tab') === 'groups') {
+                switchTab('groups');
+            } else {
+                await loadUsers(1);
+            }
+        }
+
+        function getRoleName(r) { return { ADMIN:'管理员', LEADER:'组长', MEMBER:'组员', DIRECTOR:'主任' }[r] || r; }
+        function getRoleEmoji(r) { return { ADMIN:'⚙️', LEADER:'👥', MEMBER:'👤', DIRECTOR:'🏢' }[r] || '👤'; }
+
+        // 通知功能
+        function toggleNotification() {
+            const panel = document.getElementById('notifPanel');
+            if (panel) {
+                panel.classList.toggle('show');
+            } else {
+                loadNotifications();
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const data = await apiRequest(`${API_BASE}/notifications?page=1&pageSize=10`);
+                if (data.code === 200) {
+                    renderNotifications((data.data && data.data.list) || []);
+                    if ((data.data && data.data.total) > 0) {
+                        document.getElementById('notifBadge').textContent = data.data.total > 99 ? '99+' : data.data.total;
+                        document.getElementById('notifBadge').classList.remove('hidden');
+                    }
+                }
+            } catch (e) {
+                console.error('加载通知失败');
+            }
+        }
+
+        function renderNotifications(notifications) {
+            const notifList = document.getElementById('notifList');
+            if (!notifList) return;
+            
+            if (notifications.length === 0) {
+                notifList.innerHTML = '<div class="notification-empty">暂无通知</div>';
+            } else {
+                notifList.innerHTML = notifications.map(n => `
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-text">${n.message || '新通知'}</div>
+                            <div class="notification-time">${formatTime(n.created_at)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function formatTime(time) {
+            if (!time) return '';
+            const d = new Date(time);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function closeNotificationPanel(e) {
+            const panel = document.getElementById('notifPanel');
+            const btn = document.querySelector('.notification-btn');
+            if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                await apiRequest(`${API_BASE}/notifications/read-all`, { method: 'PUT' });
+                document.getElementById('notifBadge').classList.add('hidden');
+                const panel = document.getElementById('notifPanel');
+                if (panel) {
+                    document.getElementById('notifList').innerHTML = '<div class="notification-empty">暂无通知</div>';
+                }
+            } catch (e) {
+                console.error('标记已读失败');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            (event && event.target && event.target.classList).add('active');
+
+            // 更新导航栏高亮
+            (document.getElementById('navUserBtn') && document.getElementById('navUserBtn').classList).toggle('active', tab === 'users');
+            (document.getElementById('navGroupBtn') && document.getElementById('navGroupBtn').classList).toggle('active', tab === 'groups');
+
+            if (tab === 'users') {
+                document.getElementById('usersSection').style.display = 'block';
+                document.getElementById('groupsSection').style.display = 'none';
+                document.getElementById('pageTitle').textContent = '用户管理';
+                // 显示创建用户按钮
+                const createBtn = document.getElementById('createUserBtn');
+                if (createBtn) createBtn.style.display = 'flex';
+            } else {
+                document.getElementById('usersSection').style.display = 'none';
+                document.getElementById('groupsSection').style.display = 'block';
+                document.getElementById('pageTitle').textContent = '小组管理';
+                // 隐藏创建用户按钮
+                const createBtn = document.getElementById('createUserBtn');
+                if (createBtn) createBtn.style.display = 'none';
+                loadGroups();
+            }
+        }
+
+        async function loadUsers(page = 1) {
+            currentUserPage = page;
+            const role = document.getElementById('filterRole').value;
+            const status = document.getElementById('filterStatus').value;
+
+            let url = `${API_BASE}/users?page=${page}&pageSize=20`;
+            if (role) url += `&role=${role}`;
+            if (status) url += `&status=${status}`;
+
+            try {
+                const data = await apiRequest(url);
+                renderUserTable((data.data && data.data.list) || []);
+                renderUserPagination((data.data && data.data.pagination));
+            } catch (e) {
+                document.getElementById('userTableBody').innerHTML = '<tr><td colspan="6" class="empty-state">加载失败</td></tr>';
+            }
+        }
+
+        function renderUserTable(users) {
+            const tbody = document.getElementById('userTableBody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">暂无数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.username}</td>
+                    <td>${u.real_name}</td>
+                    <td><span class="role-badge role-${u.role}">${getRoleName(u.role)}</span></td>
+                    <td>${u.group_name || '-'}</td>
+                    <td><span class="status-badge status-${u.status}">${u.status === 1 ? '启用' : '禁用'}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="editUser(${u.id})">编辑</button>
+                        ${u.status === 1 
+                            ? `<button class="action-btn disable" onclick="disableUser(${u.id})">禁用</button>`
+                            : `<button class="action-btn enable" onclick="enableUser(${u.id})">启用</button>`
+                        }
+                        <button class="action-btn reset" onclick="resetPassword(${u.id})">重置密码</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUserPagination(pagination) {
+            if (!pagination) return;
+            const { total, page, totalPages } = pagination;
+            document.getElementById('userPaginationInfo').textContent = `共 ${total} 条`;
+
+            const controls = document.getElementById('userPaginationControls');
+            let html = '';
+            html += `<button class="page-btn" onclick="loadUsers(${page - 1})" ${page <= 1 ? 'disabled' : ''}>上一页</button>`;
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<button class="page-btn ${i === page ? 'active' : ''}" onclick="loadUsers(${i})">${i}</button>`;
+            }
+            html += `<button class="page-btn" onclick="loadUsers(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>下一页</button>`;
+            controls.innerHTML = html;
+        }
+
+        function getRoleName(role) {
+            const names = { 'ADMIN': '管理员', 'LEADER': '组长', 'MEMBER': '组员', 'DIRECTOR': '主任' };
+            return names[role] || role;
+        }
+
+        function resetUserFilters() {
+            document.getElementById('filterRole').value = '';
+            document.getElementById('filterStatus').value = '';
+            loadUsers(1);
+        }
+
+        // 用户模态框
+        async function openUserModal(id = null) {
+            document.getElementById('userModal').classList.add('show');
+            document.getElementById('userForm').reset();
+            document.getElementById('editUserId').value = '';
+
+            // 加载小组列表
+            try {
+                const data = await apiRequest(`${API_BASE}/groups`);
+                allGroups = data.data || [];
+            } catch (e) {}
+
+            if (id) {
+                document.getElementById('userModalTitle').textContent = '编辑用户';
+                document.getElementById('editUserId').value = id;
+                // 加载用户详情并填充表单
+                try {
+                    const data = await apiRequest(`${API_BASE}/users/${id}`);
+                    if (data.code === 200 && data.data) {
+                        const u = data.data;
+                        document.getElementById('userUsername').value = u.username || '';
+                        document.getElementById('userUsername').readOnly = true;
+                        document.getElementById('userRealName').value = u.real_name || '';
+                        document.getElementById('userEmail').value = u.email || '';
+                        document.getElementById('userPhone').value = u.phone || '';
+                        document.getElementById('userRole').value = u.role || '';
+                        updateGroupSelect(u.role);
+                        if (u.group_id) {
+                            document.getElementById('userGroupId').value = u.group_id;
+                        }
+                    }
+                } catch (e) {
+                    console.error('加载用户详情失败', e);
+                }
+            } else {
+                document.getElementById('userModalTitle').textContent = '创建用户';
+                document.getElementById('userUsername').readOnly = false;
+                updateGroupSelect('');
+            }
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('show');
+            document.getElementById('userUsername').readOnly = false;
+        }
+
+        async function editUser(id) {
+            openUserModal(id);
+        }
+
+        async function onRoleChange() {
+            const role = document.getElementById('userRole').value;
+            // 如果小组列表为空，重新加载
+            if (allGroups.length === 0 && role) {
+                try {
+                    const data = await apiRequest(`${API_BASE}/groups`);
+                    allGroups = data.data || [];
+                } catch (e) {}
+            }
+            updateGroupSelect(role);
+        }
+
+        function updateGroupSelect(role) {
+            const select = document.getElementById('userGroupId');
+            const hint = document.getElementById('groupHint');
+
+            if (!role) {
+                select.innerHTML = '<option value="">-- 请先选择角色 --</option>';
+                hint.textContent = '选择组长时，如不选小组将自动创建新小组';
+                return;
+            }
+
+            select.innerHTML = '<option value="">-- 不指定小组 --</option>';
+            allGroups.forEach(g => {
+                select.innerHTML += `<option value="${g.id}">${g.group_name}</option>`;
+            });
+
+            if (role === 'LEADER') {
+                hint.textContent = '选择组长时，如不选小组将自动创建新小组';
+            } else if (role === 'MEMBER') {
+                hint.textContent = '组员必须属于某个小组';
+            } else {
+                hint.textContent = '管理员/主任不归属任何小组';
+            }
+        }
+
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('editUserId').value;
+            const username = document.getElementById('userUsername').value.trim();
+            const real_name = document.getElementById('userRealName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+            const role = document.getElementById('userRole').value;
+            const group_id = document.getElementById('userGroupId').value || null;
+
+            if (!username || !real_name || !role) {
+                alert('请填写必填字段');
+                return;
+            }
+
+            if (!editId && !/^\d{6}$/.test(username)) {
+                alert('工号必须为6位数字');
+                return;
+            }
+
+            if (role === 'MEMBER' && !group_id) {
+                alert('组员必须选择所属小组');
+                return;
+            }
+
+            try {
+                let data;
+                if (editId) {
+                    // 编辑用户
+                    data = await apiRequest(`${API_BASE}/users/${editId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ real_name, email, phone, role, group_id })
+                    });
+                    if (data.code === 200) {
+                        alert('修改成功');
+                        closeUserModal();
+                        loadUsers(currentUserPage);
+                        // 同步刷新小组列表（组长名字可能变了）
+                        if (document.getElementById('groupsSection').style.display !== 'none') {
+                            loadGroups();
+                        }
+                    } else {
+                        alert('修改失败: ' + data.message);
+                    }
+                } else {
+                    // 创建用户
+                    data = await apiRequest(`${API_BASE}/users`, {
+                        method: 'POST',
+                        body: JSON.stringify({ username, real_name, email, phone, role, group_id })
+                    });
+                    if (data.code === 200) {
+                        alert('创建成功！默认密码为 123456');
+                        closeUserModal();
+                        loadUsers(currentUserPage);
+                    } else {
+                        alert('创建失败: ' + data.message);
+                    }
+                }
+            } catch (e) {
+                alert(editId ? '修改失败' : '创建失败');
+            }
+        });
+
+        async function resetPassword(id) {
+            if (!confirm('确定要重置此用户的密码吗？')) return;
+            try {
+                const data = await apiRequest(`${API_BASE}/users/${id}/password/reset`, { method: 'PUT' });
+                if (data.code === 200) {
+                    alert('密码已重置为: 123456');
+                } else {
+                    alert('重置失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('重置失败');
+            }
+        }
+
+        async function disableUser(id) {
+            if (!confirm('确定要禁用此用户吗？')) return;
+            try {
+                const data = await apiRequest(`${API_BASE}/users/${id}/disable`, { method: 'PUT' });
+                if (data.code === 200) {
+                    alert('已禁用用户');
+                    loadUsers(currentUserPage);
+                } else {
+                    alert('禁用失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('禁用失败');
+            }
+        }
+
+        async function enableUser(id) {
+            try {
+                const data = await apiRequest(`${API_BASE}/users/${id}/enable`, { method: 'PUT' });
+                if (data.code === 200) {
+                    alert('已启用用户');
+                    loadUsers(currentUserPage);
+                } else {
+                    alert('启用失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('启用失败');
+            }
+        }
+
+        // 小组管理
+        async function loadGroups() {
+            try {
+                const data = await apiRequest(`${API_BASE}/groups`);
+                const groups = data.data || [];
+                allGroups = groups;
+                const grid = document.getElementById('groupGrid');
+                if (groups.length === 0) {
+                    grid.innerHTML = '<div class="empty-state">暂无小组</div>';
+                    return;
+                }
+                grid.innerHTML = groups.map(g => `
+                    <div class="group-card">
+                        <div class="group-name">${g.group_name}</div>
+                        <div class="group-info">部门: <strong>${g.department || '-'}</strong></div>
+                        <div class="group-info">组长: <strong>${g.leader_name || '待设置'}</strong></div>
+                        <div class="group-info">成员数: <strong>${g.member_count || 0}</strong></div>
+                        <div style="margin-top:10px;display:flex;gap:8px;">
+                            <button class="btn btn-outline" style="font-size:12px;padding:4px 12px;" onclick="editGroup(${g.id}, '${g.group_name.replace(/'/g,"\\'")}', '${(g.department||'').replace(/'/g,"\\'")}', ${g.leader_id || 'null'})">编辑</button>
+                            <button class="btn btn-danger" style="font-size:12px;padding:4px 12px;" onclick="deleteGroup(${g.id}, '${g.group_name.replace(/'/g,"\\'")}')">删除</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('groupGrid').innerHTML = '<div class="empty-state">加载失败</div>';
+            }
+        }
+
+        // 删除小组
+        async function deleteGroup(id, name) {
+            if (!confirm(`确定要删除小组"${name}"吗？
+
+注意：小组内有成员或计划时无法删除。`)) {
+                return;
+            }
+            try {
+                const data = await apiRequest(`${API_BASE}/groups/${id}`, {
+                    method: 'DELETE'
+                });
+                if (data.code === 200) {
+                    alert('小组删除成功');
+                    loadGroups();
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('删除失败: 网络错误');
+            }
+        }
+
+        // 编辑小组
+        async function editGroup(id, name, dept, leaderId) {
+            document.getElementById('groupModal').style.display = 'flex';
+            document.getElementById('groupModal').dataset.editId = id;
+            document.querySelector('#groupModal .modal-title').textContent = '编辑小组';
+            document.getElementById('groupName').value = name;
+            document.getElementById('groupDept').value = dept;
+            // 加载组长列表
+            try {
+                const data = await apiRequest(`${API_BASE}/users?pageSize=100`);
+                const users = (data.data && data.data.list) || data.data || [];
+                const leaders = users.filter(u => u.role === 'LEADER' && (!u.group_id || u.id === leaderId));
+                const select = document.getElementById('groupLeader');
+                select.innerHTML = '<option value="">-- 不指定 --</option>';
+                leaders.forEach(l => {
+                    select.innerHTML += `<option value="${l.id}" ${l.id == leaderId ? 'selected' : ''}>${l.real_name} (${l.username})</option>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // 创建小组
+        async function openGroupModal() {
+            document.getElementById('groupModal').style.display = 'flex';
+            delete document.getElementById('groupModal').dataset.editId;
+            document.querySelector('#groupModal .modal-title').textContent = '创建小组';
+            document.getElementById('groupForm').reset();
+            try {
+                const data = await apiRequest(`${API_BASE}/users?pageSize=100`);
+                const users = (data.data && data.data.list) || data.data || [];
+                const leaders = users.filter(u => u.role === 'LEADER' && !u.group_id);
+                const select = document.getElementById('groupLeader');
+                select.innerHTML = '<option value="">-- 不指定 --</option>';
+                leaders.forEach(l => {
+                    select.innerHTML += `<option value="${l.id}">${l.real_name} (${l.username})</option>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').style.display = 'none';
+        }
+
+        document.getElementById('groupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const group_name = document.getElementById('groupName').value.trim();
+            const department = document.getElementById('groupDept').value.trim();
+            const leader_id = document.getElementById('groupLeader').value;
+            const editId = document.getElementById('groupModal').dataset.editId;
+            if (!group_name) { alert('请输入小组名称'); return; }
+            try {
+                let data;
+                if (editId) {
+                    data = await apiRequest(`${API_BASE}/groups/${editId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ group_name, department, leader_id: leader_id || null })
+                    });
+                } else {
+                    data = await apiRequest(`${API_BASE}/groups`, {
+                        method: 'POST',
+                        body: JSON.stringify({ group_name, department, leader_id: leader_id || null })
+                    });
+                }
+                if (data.code === 200) {
+                    alert(editId ? '小组更新成功' : '小组创建成功');
+                    closeGroupModal();
+                    loadGroups();
+                    loadUsers(currentUserPage);
+                } else {
+                    alert((editId ? '更新' : '创建') + '失败: ' + data.message);
+                }
+            } catch (e) {
+                alert((editId ? '更新' : '创建') + '失败: ' + e.message);
+            }
+        });
+
+        function logout() {
+            const token = sessionStorage.getItem('token');
+            if (token) {
+                fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).catch(() => {});
+            }
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // 点击通知面板外部关闭
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('notifPanel');
+            const btn = document.querySelector('.notification-btn');
+            if (panel && !panel.contains(e.target) && btn && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

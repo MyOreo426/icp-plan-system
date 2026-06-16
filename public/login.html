@@ -16,7 +16,7 @@
         /* 左侧品牌区 */
         .brand-section {
             position: relative;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -84,7 +84,7 @@
             height: 40px;
             background: rgba(255,255,255,0.2);
             backdrop-filter: blur(10px);
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -270,7 +270,7 @@
         .brand-text {
             position: relative;
             z-index: 2;
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.7);
             font-size: 13px;
             margin-top: 50px;
             display: flex;
@@ -310,14 +310,14 @@
         .mobile-logo-icon {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .mobile-logo-icon svg { width: 20px; height: 20px; fill: white; }
-        .mobile-logo-text { font-size: 16px; font-weight: 600; color: #2c3e50; }
+        .mobile-logo-text { font-size: 16px; font-weight: 600; color: #1e293b; }
         
         /* 登录标题 */
         .login-header {
@@ -325,40 +325,45 @@
             margin-bottom: 35px;
         }
         .login-header h1 {
-            font-size: 26px;
-            color: #2c3e50;
+            font-size: 28px;
+            color: #1e293b;
             font-weight: 600;
             margin-bottom: 8px;
         }
         .login-header p {
-            color: #95a5a6;
+            color: #64748b;
             font-size: 14px;
         }
         
         /* 表单 */
         .form-group {
-            margin-bottom: 22px;
+            margin-bottom: 24px;
         }
         .form-group label {
             display: block;
-            color: #34495e;
+            color: #475569;
             font-size: 14px;
             font-weight: 500;
             margin-bottom: 8px;
         }
         .form-input {
             width: 100%;
-            padding: 13px 15px;
-            border: 2px solid #e0e6ed;
-            border-radius: 10px;
-            font-size: 15px;
+            height: 46px;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1e293b;
             transition: all 0.3s;
             outline: none;
             background: white;
         }
         .form-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        .form-input:hover:not(:focus) {
+            border-color: #c7d2fe;
         }
         .password-wrapper {
             position: relative;
@@ -369,16 +374,16 @@
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
-            color: #95a5a6;
+            color: #64748b;
             font-size: 18px;
             user-select: none;
         }
-        .password-toggle:hover { color: #667eea; }
+        .password-toggle:hover { color: #6366f1; }
         
         /* 错误提示 */
         .error-message {
             background: #fef2f2;
-            border: 1px solid #fca5a5;
+            border: 1px solid #fecaca;
             color: #dc2626;
             padding: 12px 15px;
             border-radius: 8px;
@@ -391,13 +396,13 @@
         /* 登录按钮 - 悬停滑动效果 */
         .login-btn {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             position: relative;
             overflow: hidden;
@@ -405,7 +410,11 @@
         }
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+        }
+        .login-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
         }
         .login-btn:disabled {
             opacity: 0.7;
@@ -437,10 +446,10 @@
         .demo-accounts {
             margin-top: 30px;
             padding-top: 25px;
-            border-top: 1px solid #e0e6ed;
+            border-top: 1px solid #f1f5f9;
         }
         .demo-title {
-            color: #7f8c8d;
+            color: #64748b;
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -463,17 +472,18 @@
             border: 1px solid transparent;
         }
         .demo-item:hover {
-            background: #f5f7ff;
-            border-color: #667eea;
+            background: #eef2ff;
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
         }
         .demo-role {
             font-size: 13px;
-            color: #34495e;
+            color: #475569;
             font-weight: 500;
         }
         .demo-account {
             font-size: 12px;
-            color: #95a5a6;
+            color: #64748b;
         }
         
         /* 首次登录修改密码弹窗 */
@@ -500,7 +510,7 @@
         .modal-title {
             font-size: 18px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #1e293b;
             margin-bottom: 20px;
         }
         .modal-actions {
@@ -518,12 +528,15 @@
             border: none;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: white;
         }
         .btn-secondary {
-            background: #f0f0f0;
-            color: #666;
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
         }
         .loading {
             display: inline-block;
@@ -638,7 +651,12 @@
                         <label for="password">密码</label>
                         <div class="password-wrapper">
                             <input type="password" class="form-input" id="password" name="password" placeholder="请输入密码" required autocomplete="current-password">
-                            <span class="password-toggle" id="passwordToggle" title="显示/隐藏密码">👁️</span>
+                            <span class="password-toggle" id="passwordToggle" title="显示/隐藏密码">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+    </span>
                         </div>
                     </div>
                     <button type="submit" class="login-btn" id="loginBtn">
@@ -1050,12 +1068,15 @@
         });
         
         // 密码可见性切换
+        const eyeIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        const eyeOffIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+        
         document.getElementById('passwordToggle').addEventListener('click', function() {
             const pwd = document.getElementById('password');
             if (pwd.type === 'password') {
                 pwd.type = 'text';
                 passwordVisible = true;
-                this.textContent = '🙈';
+                this.innerHTML = eyeOffIcon;
                 
                 if (passwordLength > 0) {
                     startPeeking();
@@ -1063,7 +1084,7 @@
             } else {
                 pwd.type = 'password';
                 passwordVisible = false;
-                this.textContent = '👁️';
+                this.innerHTML = eyeIcon;
                 stopPeeking();
             }
             updateCharacterPositions();

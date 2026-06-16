@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交付计划列表 - 内控计划共享编辑系统</title>
+    <script src="echarts.min.js"></script>
+    <script src="xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        /* 导航栏 */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo svg { width: 24px; height: 24px; fill: white; }
+        .system-title { color: white; font-size: 18px; font-weight: 600; }
+        .navbar-right { display: flex; align-items: center; gap: 20px; }
+        .nav-btn {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        .nav-btn.active { background: rgba(255,255,255,0.2); color: white; font-weight: 500; }
+        .nav-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+
+        /* 通知按钮 */
+        .notification-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .notification-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .notification-btn svg { width: 22px; height: 22px; fill: white; }
+        .notification-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 18px; height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #667eea;
+        }
+        .notification-badge.hidden { display: none; }
+
+        /* 用户信息 */
+        .user-info { display: flex; align-items: center; gap: 10px; color: white; }
+        .user-avatar {
+            width: 36px; height: 36px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .user-name { font-size: 14px; }
+        .user-role {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .password-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .password-btn:hover { background: rgba(255, 255, 255, 0.25); }
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* 主内容区 */
+        .main-content {
+            padding-top: 80px;
+            padding-bottom: 40px;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-left: 24px;
+            padding-right: 24px;
+        }
+
+        /* 页面标题 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .page-title { font-size: 24px; color: #2c3e50; font-weight: 600; }
+        .page-actions { display: flex; gap: 10px; }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            text-decoration: none;
+        }
+        .btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+        .btn-danger:hover { background: #fee2e2; }
+        .btn-success { background: #d1fae5; color: #059669; border: 1px solid #6ee7b7; }
+        .btn-success:hover { background: #a7f3d0; }
+        .btn-outline { background: white; color: #7f8c8d; border: 1px solid #e0e6ed; }
+        .btn-outline:hover { border-color: #667eea; color: #667eea; }
+
+        /* 筛选区 */
+        .filter-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-label { font-size: 12px; color: #7f8c8d; }
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            width: 160px;
+        }
+        .filter-input:focus { border-color: #667eea; }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+            width: 140px;
+        }
+        .filter-select:focus { border-color: #667eea; }
+        .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+        /* 数据表格 */
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 100%;
+        }
+        th {
+            background: #f8fafc;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #34495e;
+            border-bottom: 1px solid #e0e6ed;
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px 15px;
+            font-size: 13px;
+            color: #34495e;
+            border-bottom: 1px solid #f0f3ff;
+            white-space: nowrap;
+        }
+        tr:hover td { background: #fafbff; }
+        tr:last-child td { border-bottom: none; }
+
+        .col-seq { width: 60px; text-align: center; }
+        .col-name { width: 250px; }
+        .col-type { width: 120px; }
+        .col-dept { width: 120px; }
+        .col-date { width: 110px; }
+        .col-status { width: 100px; }
+        .col-new { width: 100px; text-align: center; }
+        .col-actions { width: 120px; }
+
+        /* 状态标签 */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-completed { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+        .status-incomplete { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+        .status-progress { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+        /* 新增标签 */
+        .new-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        /* 操作按钮 */
+        .action-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            margin-right: 5px;
+            transition: all 0.2s;
+        }
+        .action-btn.edit { background: #e0e7ff; color: #4f46e5; }
+        .action-btn.edit:hover { background: #c7d2fe; }
+        .action-btn.delete { background: #fef2f2; color: #dc2626; }
+        .action-btn.delete:hover { background: #fee2e2; }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 20px 0;
+        }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e0e6ed;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #374151;
+        }
+        .page-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; }
+        .page-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: #6b7280; }
+
+        /* 空状态 */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #9ca3af;
+        }
+        .empty-state svg {
+            width: 64px; height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .empty-state p { font-size: 14px; }
+
+        /* 消息提示 */
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.info { background: #3b82f6; }
+        .toast.warning { background: #f59e0b; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* 确认弹窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            min-width: 360px;
+            max-width: 90vw;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+        .modal-content {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 统计卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+            max-width: 600px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .main-content { padding-left: 16px; padding-right: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </div>
+            <span class="system-title">计划管理系统</span>
+            <div class="nav-divider"></div>
+            <a href="index.html" class="nav-btn" id="dashboardNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                仪表盘
+            </a>
+            <a href="business-plan-list.html" class="nav-btn" id="businessPlanNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                经营计划
+            </a>
+            <a href="delivery-plan-list.html" class="nav-btn active" id="deliveryPlanNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10zm-2-2h-4v-2h4v2zm0-4H8v-2h10v2z"/></svg>
+                交付计划
+            </a>
+            <a href="admin.html" class="nav-btn" id="adminNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                用户管理
+            </a>
+            <a href="admin.html?tab=groups" class="nav-btn" id="groupNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                小组管理
+            </a>
+            <a href="plan-list.html" class="nav-btn" id="planListNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                重点任务
+            </a>
+            <a href="plan-list-excel.html" class="nav-btn" id="planExcelNavBtn">
+                <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
+                重点任务（表格版）
+            </a>
+            <a href="operation-log.html" class="nav-btn" id="logNavBtn" style="display:none;">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                操作日志
+            </a>
+        </div>
+        <div class="navbar-right">
+            <button class="notification-btn" onclick="window.location.href='notifications.html'">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                <span class="notification-badge hidden" id="notificationBadge">0</span>
+            </button>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <span class="user-name" id="userName">加载中...</span>
+                <span class="user-role" id="userRole">--</span>
+            </div>
+            <button class="password-btn" id="passwordBtn" title="修改密码">🔑 修改密码</button>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 统计卡片 -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">计划总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="transferCount" style="color: #10b981;">0</div>
+                <div class="stat-label">已转场</div>
+            </div>
+        </div>
+
+        <!-- 页面标题 -->
+        <div class="page-header">
+            <h1 class="page-title">交付计划列表</h1>
+            <div class="page-actions">
+                <button class="btn btn-success" onclick="triggerImport()">
+                    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                    交付计划导入
+                </button>
+                <button class="btn btn-danger" onclick="confirmClear()">
+                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    数据清除
+                </button>
+            </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label class="filter-label">产品编号</label>
+                <input type="text" class="filter-input" id="filterProductNo" placeholder="请输入产品编号" onkeyup="if(event.key==='Enter')loadPlans(1)">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">产品名称</label>
+                <input type="text" class="filter-input" id="filterProductName" placeholder="请输入产品名称" onkeyup="if(event.key==='Enter')loadPlans(1)">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">用户</label>
+                <input type="text" class="filter-input" id="filterUserName" placeholder="请输入用户" onkeyup="if(event.key==='Enter')loadPlans(1)">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">批次</label>
+                <input type="text" class="filter-input" id="filterBatchNo" placeholder="请输入批次" onkeyup="if(event.key==='Enter')loadPlans(1)">
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">当前进度</label>
+                <input type="text" class="filter-input" id="filterProgress" placeholder="请输入进度关键词" onkeyup="if(event.key==='Enter')loadPlans(1)">
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-outline" onclick="resetFilters()">重置</button>
+                <button class="btn btn-primary" onclick="loadPlans(1)">查询</button>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="data-table">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-seq">序号</th>
+                            <th>产品编号</th>
+                            <th>产品名称</th>
+                            <th>用户</th>
+                            <th>批次</th>
+                            <th>架次</th>
+                            <th>分配命令</th>
+                            <th>大纲计划</th>
+                            <th>科研转场计划</th>
+                            <th>铅封</th>
+                            <th>进入接装</th>
+                            <th>检飞</th>
+                            <th>转试</th>
+                            <th>转场</th>
+                            <th>YH机号</th>
+                            <th>当前进度</th>
+                            <th>转场周期</th>
+                            <th>接装问题数</th>
+                            <th>备忘录数</th>
+                            <th>备注</th>
+                            <th>创建时间</th>
+                            <th>更新时间</th>
+                            <th class="col-actions">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="planTableBody">
+                        <!-- 数据动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination">
+                <!-- 分页动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="importFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleImportFile(event)">
+
+    <!-- 确认弹窗 -->
+    <div class="modal-overlay hidden" id="confirmModal">
+        <div class="modal">
+            <div class="modal-title" id="modalTitle">确认操作</div>
+            <div class="modal-content" id="modalContent">确定要执行此操作吗？</div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal()">取消</button>
+                <button class="btn btn-danger" id="modalConfirmBtn" onclick="confirmAction()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentPage = 1;
+        let pageSize = 20;
+        let total = 0;
+        let currentUser = null;
+        let plans = [];
+        let confirmCallback = null;
+
+        // API请求封装
+        async function apiRequest(url, options = {}) {
+            const token = sessionStorage.getItem('token');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            const res = await fetch(url, {
+                ...options,
+                headers
+            });
+            return res.json();
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+
+        // 检查登录状态
+        async function checkAuth() {
+            try {
+                const data = await apiRequest(`${API_BASE}/auth/info`);
+                if (data.code === 200) {
+                    currentUser = data.data;
+                    document.getElementById('userName').textContent = currentUser.real_name || currentUser.username;
+                    document.getElementById('userRole').textContent = getRoleName(currentUser.role);
+                    document.getElementById('userAvatar').textContent = getRoleEmoji(currentUser.role);
+                    
+                    // 根据角色调整导航
+                    updateNavByRole();
+                    
+                    // 加载筛选选项
+                    loadFilterOptions();
+                    
+                    // 加载列表
+                    loadPlans(1);
+                    
+                    // 加载统计
+                    loadStats();
+                    
+                    // 加载未读通知数
+                    loadNotificationCount();
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } catch (e) {
+                console.error('认证检查失败', e);
+                window.location.href = 'login.html';
+            }
+        }
+
+        function getRoleName(role) {
+            const names = { 'ADMIN': '管理员', 'LEADER': '组长', 'MEMBER': '组员', 'DIRECTOR': '主任' };
+            return names[role] || role;
+        }
+
+        function getRoleEmoji(role) {
+            const emojis = { 'ADMIN': '⚙️', 'LEADER': '👥', 'MEMBER': '👤', 'DIRECTOR': '🏢' };
+            return emojis[role] || '👤';
+        }
+
+        function updateNavByRole() {
+            const role = currentUser.role;
+            if (role === 'ADMIN') {
+                // 管理员：只显示用户管理、小组管理、操作日志
+                document.getElementById('dashboardNavBtn').style.display = 'none';
+                document.getElementById('planListNavBtn').style.display = 'none';
+                document.getElementById('planExcelNavBtn').style.display = 'none';
+                document.getElementById('logNavBtn').style.display = 'flex';
+                document.getElementById('adminNavBtn').style.display = 'flex';
+                document.getElementById('groupNavBtn').style.display = 'flex';
+            } else if (['LEADER', 'DIRECTOR'].includes(role)) {
+                // 主任/组长：显示操作日志
+                document.getElementById('logNavBtn').style.display = 'flex';
+            }
+            // MEMBER：默认显示重点任务，无需额外操作
+        }
+
+        async function loadNotificationCount() {
+            try {
+                const data = await apiRequest(`${API_BASE}/notifications/unread-count`);
+                if (data.code === 200 && data.data > 0) {
+                    document.getElementById('notificationBadge').textContent = data.data;
+                    document.getElementById('notificationBadge').classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('加载通知数失败', e);
+            }
+        }
+
+        function logout() {
+            apiRequest(`${API_BASE}/auth/logout`, { method: 'POST' }).then(() => {
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            });
+        }
+
+        // 加载筛选选项（从数据中提取）
+        function loadFilterOptions() {
+            // 实际数据加载后再更新选项
+        }
+
+        // 更新筛选下拉选项
+        function updateFilterOptions() {
+            const typeSet = new Set();
+            const deptSet = new Set();
+            plans.forEach(p => {
+                if (p.plan_type) typeSet.add(p.plan_type);
+                if (p.department) deptSet.add(p.department);
+            });
+
+            const typeSelect = document.getElementById('filterType');
+            const deptSelect = document.getElementById('filterDept');
+            const currentType = typeSelect.value;
+            const currentDept = deptSelect.value;
+
+            typeSelect.innerHTML = '<option value="">全部</option>';
+            deptSelect.innerHTML = '<option value="">全部</option>';
+
+            typeSet.forEach(t => {
+                typeSelect.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+            deptSet.forEach(d => {
+                deptSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+
+            typeSelect.value = currentType;
+            deptSelect.value = currentDept;
+        }
+
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                // 使用全部数据来统计
+                const productNo = document.getElementById('filterProductNo').value;
+                const productName = document.getElementById('filterProductName').value;
+                const userName = document.getElementById('filterUserName').value;
+                const batchNo = document.getElementById('filterBatchNo').value;
+                const progress = document.getElementById('filterProgress').value;
+
+                let params = new URLSearchParams();
+                if (productNo) params.append('product_no', productNo);
+                if (productName) params.append('product_name', productName);
+                if (userName) params.append('user_name', userName);
+                if (batchNo) params.append('batch_no', batchNo);
+                if (progress) params.append('current_progress', progress);
+
+                const data = await apiRequest(`${API_BASE}/delivery-plans/all?${params.toString()}`);
+                if (data.code === 200) {
+                    const allPlans = data.data || [];
+                    const hasTransfer = allPlans.filter(p => p.transfer_field && p.transfer_field !== '').length;
+
+                    document.getElementById('totalCount').textContent = allPlans.length;
+                    document.getElementById('transferCount').textContent = hasTransfer;
+                }
+            } catch (e) {
+                console.error('加载统计失败', e);
+            }
+        }
+
+        // 加载计划列表
+        async function loadPlans(page) {
+            currentPage = page || 1;
+            const productNo = document.getElementById('filterProductNo').value;
+            const productName = document.getElementById('filterProductName').value;
+            const userName = document.getElementById('filterUserName').value;
+            const batchNo = document.getElementById('filterBatchNo').value;
+            const progress = document.getElementById('filterProgress').value;
+
+            let params = new URLSearchParams();
+            params.append('page', currentPage);
+            params.append('pageSize', pageSize);
+            if (productNo) params.append('product_no', productNo);
+            if (productName) params.append('product_name', productName);
+            if (userName) params.append('user_name', userName);
+            if (batchNo) params.append('batch_no', batchNo);
+            if (progress) params.append('current_progress', progress);
+
+            try {
+                const data = await apiRequest(`${API_BASE}/delivery-plans?${params.toString()}`);
+                if (data.code === 200) {
+                    plans = data.data.list || data.data || [];
+                    total = data.data.total || 0;
+                    renderTable();
+                    renderPagination();
+                }
+            } catch (e) {
+                console.error('加载列表失败', e);
+                showToast('加载失败', 'error');
+            }
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('planTableBody');
+            if (plans.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                                <p>暂无交付计划数据</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * pageSize;
+            let html = '';
+            plans.forEach((plan, index) => {
+                const seq = startIndex + index + 1;
+                html += `
+                    <tr>
+                        <td class="col-seq">${seq}</td>
+                        <td title="${plan.product_no || ''}">${plan.product_no || '-'}</td>
+                        <td title="${plan.product_name || ''}">${plan.product_name || '-'}</td>
+                        <td title="${plan.user_name || ''}">${plan.user_name || '-'}</td>
+                        <td title="${plan.batch_no || ''}">${plan.batch_no || '-'}</td>
+                        <td title="${plan.sortie_no || ''}">${plan.sortie_no || '-'}</td>
+                        <td title="${plan.assign_command || ''}">${plan.assign_command || '-'}</td>
+                        <td title="${plan.outline_plan || ''}">${plan.outline_plan || '-'}</td>
+                        <td title="${plan.research_transfer_plan || ''}">${plan.research_transfer_plan || '-'}</td>
+                        <td title="${plan.lead_seal || ''}">${plan.lead_seal || '-'}</td>
+                        <td title="${plan.enter_acceptance || ''}">${plan.enter_acceptance || '-'}</td>
+                        <td title="${plan.test_flight || ''}">${plan.test_flight || '-'}</td>
+                        <td title="${plan.transfer_test || ''}">${plan.transfer_test || '-'}</td>
+                        <td title="${plan.transfer_field || ''}">${plan.transfer_field || '-'}</td>
+                        <td title="${plan.yh_plane_no || ''}">${plan.yh_plane_no || '-'}</td>
+                        <td title="${plan.current_progress || ''}">${plan.current_progress || '-'}</td>
+                        <td title="${plan.transfer_cycle || ''}">${plan.transfer_cycle || '-'}</td>
+                        <td>${plan.acceptance_issue_count || 0}</td>
+                        <td>${plan.memo_count || 0}</td>
+                        <td title="${plan.remark || ''}">${plan.remark || '-'}</td>
+                        <td>${formatDateTime(plan.create_time)}</td>
+                        <td>${formatDateTime(plan.update_time)}</td>
+                        <td class="col-actions">
+                            <button class="action-btn edit" onclick="editPlan(${plan.id})">编辑</button>
+                            <button class="action-btn delete" onclick="deletePlan(${plan.id})">删除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                return dateStr.split(' ')[0];
+            }
+            return dateStr;
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            return dateStr;
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const totalPages = Math.ceil(total / pageSize);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            html += `<button class="page-btn" onclick="loadPlans(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+            
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadPlans(${i})">${i}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="loadPlans(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
+            pagination.innerHTML = html;
+        }
+
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('filterProductNo').value = '';
+            document.getElementById('filterProductName').value = '';
+            document.getElementById('filterUserName').value = '';
+            document.getElementById('filterBatchNo').value = '';
+            document.getElementById('filterProgress').value = '';
+            loadPlans(1);
+            loadStats();
+        }
+
+        // 触发导入
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        // 处理导入文件
+        async function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                showToast('请上传Excel文件（.xlsx或.xls格式）', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                if (jsonData.length === 0) {
+                    showToast('Excel文件中没有数据', 'error');
+                    event.target.value = '';
+                    return;
+                }
+
+                if (!confirm(`即将导入 ${jsonData.length} 条交付计划数据，是否继续？`)) {
+                    event.target.value = '';
+                    return;
+                }
+
+                const result = await apiRequest(`${API_BASE}/delivery-plans/import`, {
+                    method: 'POST',
+                    body: JSON.stringify({ plans: jsonData })
+                });
+                if (result.code === 200) {
+                    showToast(`导入成功：成功${result.data.success}条，失败${result.data.failed}条`, 'success');
+                    loadPlans(1);
+                    loadStats();
+                } else {
+                    showToast(result.message || '导入失败', 'error');
+                }
+            } catch (e) {
+                console.error('导入失败', e);
+                showToast('导入失败：' + e.message, 'error');
+            }
+
+            event.target.value = '';
+        }
+
+        // 确认清除数据
+        function confirmClear() {
+            showModal('数据清除确认', '确定要物理删除所有交付计划数据吗？此操作不可恢复！', 'danger', function() {
+                clearAllData();
+            });
+        }
+
+        async function clearAllData() {
+            try {
+                const data = await apiRequest(`${API_BASE}/delivery-plans/clear`, {
+                    method: 'POST'
+                });
+                if (data.code === 200) {
+                    showToast(`已清除 ${data.data.cleared_count} 条数据`, 'success');
+                    loadPlans(1);
+                    loadStats();
+                } else {
+                    showToast(data.message || '清除失败', 'error');
+                }
+            } catch (e) {
+                console.error('清除失败', e);
+                showToast('清除失败', 'error');
+            }
+        }
+
+        // 编辑计划
+        function editPlan(id) {
+            showToast('编辑功能开发中', 'info');
+        }
+
+        // 删除计划
+        function deletePlan(id) {
+            showModal('删除确认', '确定要删除这条交付计划吗？', 'danger', async function() {
+                try {
+                    const data = await apiRequest(`${API_BASE}/delivery-plans/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (data.code === 200) {
+                        showToast('删除成功', 'success');
+                        loadPlans(currentPage);
+                        loadStats();
+                    } else {
+                        showToast(data.message || '删除失败', 'error');
+                    }
+                } catch (e) {
+                    showToast('删除失败', 'error');
+                }
+            });
+        }
+
+        // 弹窗相关
+        function showModal(title, content, type, callback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').textContent = content;
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            if (type === 'danger') {
+                confirmBtn.className = 'btn btn-danger';
+            } else if (type === 'success') {
+                confirmBtn.className = 'btn btn-success';
+            } else {
+                confirmBtn.className = 'btn btn-primary';
+            }
+            confirmCallback = callback;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        function confirmAction() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeModal();
+        }
+
+        // Toast提示
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type || 'info'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // 点击遮罩关闭弹窗
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
