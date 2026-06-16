@@ -748,37 +748,32 @@
             });
         }
 
-        // 加载筛选选项（从数据中提取）
-        function loadFilterOptions() {
-            // 实际数据加载后再更新选项
-        }
+        // 加载筛选选项（从数据库获取全量）
+        async function loadFilterOptions() {
+            try {
+                const data = await apiRequest(`${API_BASE}/business-plans/options`);
+                if (data.code === 200) {
+                    const typeSelect = document.getElementById('filterType');
+                    const deptSelect = document.getElementById('filterDept');
+                    const currentType = typeSelect.value;
+                    const currentDept = deptSelect.value;
 
-        // 更新筛选下拉选项
-        function updateFilterOptions() {
-            const typeSet = new Set();
-            const deptSet = new Set();
-            plans.forEach(p => {
-                if (p.plan_type) typeSet.add(p.plan_type);
-                if (p.department) deptSet.add(p.department);
-            });
+                    typeSelect.innerHTML = '<option value="">全部</option>';
+                    deptSelect.innerHTML = '<option value="">全部</option>';
 
-            const typeSelect = document.getElementById('filterType');
-            const deptSelect = document.getElementById('filterDept');
-            const currentType = typeSelect.value;
-            const currentDept = deptSelect.value;
+                    (data.data.plan_types || []).forEach(function(t) {
+                        typeSelect.innerHTML += '<option value="' + t + '">' + t + '</option>';
+                    });
+                    (data.data.departments || []).forEach(function(d) {
+                        deptSelect.innerHTML += '<option value="' + d + '">' + d + '</option>';
+                    });
 
-            typeSelect.innerHTML = '<option value="">全部</option>';
-            deptSelect.innerHTML = '<option value="">全部</option>';
-
-            typeSet.forEach(t => {
-                typeSelect.innerHTML += `<option value="${t}">${t}</option>`;
-            });
-            deptSet.forEach(d => {
-                deptSelect.innerHTML += `<option value="${d}">${d}</option>`;
-            });
-
-            typeSelect.value = currentType;
-            deptSelect.value = currentDept;
+                    typeSelect.value = currentType;
+                    deptSelect.value = currentDept;
+                }
+            } catch (e) {
+                console.error('加载筛选选项失败', e);
+            }
         }
 
         // 加载统计数据
@@ -840,7 +835,6 @@
                     total = (data.data.pagination && data.data.pagination.total) || 0;
                     renderTable();
                     renderPagination();
-                    updateFilterOptions();
                 }
             } catch (e) {
                 console.error('加载列表失败', e);

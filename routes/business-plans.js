@@ -758,4 +758,35 @@ router.get('/stats/finish-date-compare', (req, res) => {
   return success(res, result);
 });
 
+/**
+ * GET /api/business-plans/options
+ * 获取所有筛选选项（计划类型、责任科室）
+ */
+router.get('/options', (req, res) => {
+  const db = getDb();
+
+  // 获取所有计划类型
+  const typeResult = db.prepare(`
+    SELECT DISTINCT plan_type
+    FROM business_plan
+    WHERE plan_type IS NOT NULL AND plan_type != ''
+    ORDER BY plan_type
+  `).all();
+
+  // 获取所有责任科室
+  const deptResult = db.prepare(`
+    SELECT DISTINCT department
+    FROM business_plan
+    WHERE department IS NOT NULL AND department != ''
+    ORDER BY department
+  `).all();
+
+  const result = {
+    plan_types: typeResult.map(function(t) { return t.plan_type; }),
+    departments: deptResult.map(function(d) { return d.department; })
+  };
+
+  return success(res, result);
+});
+
 module.exports = router;
